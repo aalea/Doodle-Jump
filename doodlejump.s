@@ -193,9 +193,14 @@ keyPressHandler:
 	j KEY_NOT_PRESSED	
 			
 NOT_J_KEY_PRESS:	#check if the key press was 'k'
-			bne $t2, 107, KEY_NOT_PRESSED
+			bne $t2, 107, NOT_A_K_KEY_PRESS
 			#handle k key press
 			addi $t0, $t0, 4 # move to right by 1 pixel
+			
+NOT_A_K_KEY_PRESS:	#check if the key press was 's'
+			bne $t2, 115, KEY_NOT_PRESSED
+			#handle s key press
+			# TODO
 			
 KEY_NOT_PRESSED:	sw $t0, doodlerLocation
 			jr $ra
@@ -245,6 +250,68 @@ START_LOOP_JUMP_DOWN:	beq $t8, $t9, EXIT_LOOP_JUMP_DOWN # branch if counter is 7
 UPDATE_LOOP_JUMP_DOWN: 	addi $t8, $t8, 1 # increment counter by 1
 			j START_LOOP_JUMP_DOWN
 EXIT_LOOP_JUMP_DOWN: 
+
+	# 4. Check for platform collision
+	# if platformLocation - 132 <= doodlerLocation <= platformLocation - 122
+	#	platformLocation - 132 - doodlerLocation <= 0 <= platformLocation - 122 - doodlerLocation
+	# checking platform 1
+	lw $t0, doodlerLocation
+CHECKING_PLATFORM_ONE: 	
+			lw $t1, platformOneLocation
+	
+			# adjust $t2 to use in less than or equal branch condition
+			subi $t2, $t1, 132
+			sub $t2, $t0, $t2 # doodlerLocation - platformOneOffset
+			#adjust $t3 to use in greater than or equal branch condition 
+			subi $t3, $t1, 121
+			sub $t3, $t0, $t3 # doodlerLocation - platformOneOffset
+			
+			blez $t2, CHECKING_PLATFORM_TWO
+		       	bgtz $t3, CHECKING_PLATFORM_TWO	
+		       	j HANDLE_COLLISION # handle colliding with platform 1
+	# checking platform 2
+CHECKING_PLATFORM_TWO: 
+			lw $t1, platformTwoLocation
+	
+			# adjust $t2 to use in less than or equal branch condition
+			subi $t2, $t1, 132
+			sub $t2, $t0, $t2 # doodlerLocation - platformTwoOffset
+			#adjust $t3 to use in greater than or equal branch condition 
+			subi $t3, $t1, 121
+			sub $t3, $t0, $t3 # doodlerLocation - platformTwoOffset
+			
+			blez $t2, CHECKING_PLATFORM_THREE
+		       	bgtz $t3, CHECKING_PLATFORM_THREE	
+		       	j HANDLE_COLLISION # handle colliding with platform 2
+	#checking platform 3
+CHECKING_PLATFORM_THREE:
+			lw $t1, platformThreeLocation
+	
+			# adjust $t2 to use in less than or equal branch condition
+			subi $t2, $t1, 132
+			sub $t2, $t0, $t2 # doodlerLocation - platformThreeOffset
+			#adjust $t3 to use in greater than or equal branch condition 
+			subi $t3, $t1, 121
+			sub $t3, $t0, $t3 # doodlerLocation - platformThreeOffset
+			
+			blez $t2, NO_COLLISION
+		       	bgtz $t3, NO_COLLISION	
+		       	j HANDLE_COLLISION # handle colliding with platform 3
+	# 4.1. If Doodler's position is on top of platform, restart jump from current position
+HANDLE_COLLISION:	j jump
+
+NO_COLLISION: 
+	# 4.2. Otherwise, check keyboard input
+	# 4.2.1. If 'j', update Doodler's position by 1 left, 1 down
+	# 4.2.2. If 'k', update Doodler's position by 1 right, 1 down
+	# 4.2.3. Otherwise, update Doodler's position by 1 down only
+	# 5. If no collision, repeat until there is, or Doodler's position passes bottom of screen
+	
+
+
 			lw $ra, ($sp)
 			addi $sp, $sp, 4
-			j jump
+			jr $ra
+			
+			
+			
