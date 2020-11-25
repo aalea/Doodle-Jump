@@ -38,7 +38,7 @@
 	platformThreeLocation: .word 256
 	
 	# offset of the left-bottommost pixel's location from the base address
-	doodlerLocation: .word 3896
+	doodlerLocation: .word 3896 #1968 #3896
 	
 	platformColour: .word 0xe9dc9e
 	doodlerColour: .word 0xafe99e
@@ -69,20 +69,25 @@ setup:
 	
 sleep:	
 	li $v0, 32
-	li $a0, 500
+	li $a0, 250
 	syscall
 	jr $ra
 	
 drawPlatforms:
 	lw $t0, displayAddress # $t0 stores the base address for display
 	lw $t1, platformColour # $t1 stores the colour of the platforms
-	sw $t1, 4020($t0) # paint the 1st pixel of the first platform
-	sw $t1, 4024($t0) # paint the 2nd pixel of the first platform
-	sw $t1, 4028($t0) # paint the 3rd pixel of the first platform
-	sw $t1, 4032($t0) # paint the 4th pixel of the first platform
-	sw $t1, 4036($t0) # paint the 5th pixel of the first platform
-	sw $t1, 4040($t0) # paint the 6th pixel of the first platform
-	sw $t1, 4044($t0) # paint the 7th pixel of the first platform
+	
+	lw $t2, platformOneLocation # store the second platform's offset to base address
+	add $t3, $t0, $t2 # create $t3 starting at leftmost pixel of platform, will be used as cursor
+	
+	add $t4, $zero, $zero # set init value to 0
+	addi $t5, $zero, 7 # set loop stop val to 7 (loop repeats 7 times)
+START_LOOP_DRAWING_PLATFORM_ONE:	beq $t4, $t5, EXIT_LOOP_DRAWING_PLATFORM_ONE # branch if counter is 7
+					sw $t1, 0($t3) # paint the pixel at the cursor's address
+					addi $t3, $t3, 4 # increment the cursor by 4 to target the next address in display
+UPDATE_LOOP_DRAWING_PLATFORM_ONE: 	addi $t4, $t4, 1 # increment counter by 1
+			 		j START_LOOP_DRAWING_PLATFORM_ONE
+EXIT_LOOP_DRAWING_PLATFORM_ONE: 
 	
 	lw $t2, platformTwoLocation # store the second platform's offset to base address
 	add $t3, $t0, $t2 # create $t3 starting at leftmost pixel of platform, will be used as cursor
@@ -224,78 +229,59 @@ START_LOOP_JUMP_UP:	beq $t8, $t9, EXIT_LOOP_JUMP_UP # branch if counter is 7
 	
 			# 2. Redraw Doodler
 			jal drawDoodler
-			
 			jal sleep
 			
 UPDATE_LOOP_JUMP_UP: 	addi $t8, $t8, 1 # increment counter by 1
 			j START_LOOP_JUMP_UP
-EXIT_LOOP_JUMP_UP: 	
+EXIT_LOOP_JUMP_UP: 	j fall
 
-	add $t8, $zero, $zero # reset init value to 0
-	addi $t9, $zero, 7 # set loop stop val to 7 (loop repeats 7 times)
-START_LOOP_JUMP_DOWN:	beq $t8, $t9, EXIT_LOOP_JUMP_DOWN # branch if counter is 7
-			# 1. Update Doodler's position by 1 up
-			jal recolourPixelsOverDoodler
-			jal keyPressHandler
+			lw $ra, ($sp)
+			addi $sp, $sp, 4
+			jr $ra
 			
-			lw $t0, doodlerLocation
-			addi $t0, $t0, 128
-			sw $t0, doodlerLocation
-	
-			# 2. Redraw Doodler
-			jal drawDoodler
-			
-			jal sleep
-			
-UPDATE_LOOP_JUMP_DOWN: 	addi $t8, $t8, 1 # increment counter by 1
-			j START_LOOP_JUMP_DOWN
-EXIT_LOOP_JUMP_DOWN: 
-
+fall:
+	#addi $sp, $sp, -4
+	#sw $ra, ($sp)
 	# 4. Check for platform collision
 	# if platformLocation - 132 <= doodlerLocation <= platformLocation - 122
 	#	platformLocation - 132 - doodlerLocation <= 0 <= platformLocation - 122 - doodlerLocation
 	# checking platform 1
 	lw $t0, doodlerLocation
+	
 CHECKING_PLATFORM_ONE: 	
 			lw $t1, platformOneLocation
 	
 			# adjust $t2 to use in less than or equal branch condition
-			subi $t2, $t1, 132
-			sub $t2, $t0, $t2 # doodlerLocation - platformOneOffset
+			subi $t2, $t1, 144
 			#adjust $t3 to use in greater than or equal branch condition 
-			subi $t3, $t1, 121
-			sub $t3, $t0, $t3 # doodlerLocation - platformOneOffset
+			subi $t3, $t1, 100
 			
-			blez $t2, CHECKING_PLATFORM_TWO
-		       	bgtz $t3, CHECKING_PLATFORM_TWO	
+			ble $t0, $t2, CHECKING_PLATFORM_TWO
+		       	bgt $t0, $t3, CHECKING_PLATFORM_TWO	
 		       	j HANDLE_COLLISION # handle colliding with platform 1
 	# checking platform 2
 CHECKING_PLATFORM_TWO: 
 			lw $t1, platformTwoLocation
 	
 			# adjust $t2 to use in less than or equal branch condition
-			subi $t2, $t1, 132
-			sub $t2, $t0, $t2 # doodlerLocation - platformTwoOffset
+			subi $t2, $t1, 144
 			#adjust $t3 to use in greater than or equal branch condition 
-			subi $t3, $t1, 121
-			sub $t3, $t0, $t3 # doodlerLocation - platformTwoOffset
+			subi $t3, $t1, 100
 			
-			blez $t2, CHECKING_PLATFORM_THREE
-		       	bgtz $t3, CHECKING_PLATFORM_THREE	
+			ble $t0, $t2, CHECKING_PLATFORM_THREE
+		       	bgt $t0, $t3, CHECKING_PLATFORM_THREE	
 		       	j HANDLE_COLLISION # handle colliding with platform 2
 	#checking platform 3
 CHECKING_PLATFORM_THREE:
 			lw $t1, platformThreeLocation
 	
 			# adjust $t2 to use in less than or equal branch condition
-			subi $t2, $t1, 132
-			sub $t2, $t0, $t2 # doodlerLocation - platformThreeOffset
+			subi $t2, $t1, 144
 			#adjust $t3 to use in greater than or equal branch condition 
-			subi $t3, $t1, 121
-			sub $t3, $t0, $t3 # doodlerLocation - platformThreeOffset
+			subi $t3, $t1, 100
 			
-			blez $t2, NO_COLLISION
-		       	bgtz $t3, NO_COLLISION	
+			ble $t0, $t2, NO_COLLISION
+		       	bgt $t0, $t3, NO_COLLISION	
 		       	j HANDLE_COLLISION # handle colliding with platform 3
 	# 4.1. If Doodler's position is on top of platform, restart jump from current position
 HANDLE_COLLISION:	j jump
@@ -307,11 +293,26 @@ NO_COLLISION:
 	# 4.2.3. Otherwise, update Doodler's position by 1 down only
 	# 5. If no collision, repeat until there is, or Doodler's position passes bottom of screen
 	
-
-
-			lw $ra, ($sp)
-			addi $sp, $sp, 4
-			jr $ra
+	
+START_LOOP_JUMP_DOWN:	#beq $t8, $t9, EXIT_LOOP_JUMP_DOWN # branch if counter is 7
+			# 1. Update Doodler's position by 1 down
+			jal recolourPixelsOverDoodler
+			jal keyPressHandler
 			
+			lw $t0, doodlerLocation
+			addi $t0, $t0, 128
+			sw $t0, doodlerLocation
+	
+			# 2. Redraw Doodler
+			jal drawDoodler
+			jal sleep
+			
+UPDATE_LOOP_JUMP_DOWN: 	#addi $t8, $t8, 1 # increment counter by 1
+			
+EXIT_LOOP_JUMP_DOWN: 	j fall
+
+	lw $ra, ($sp)
+	addi $sp, $sp, 4
+	jr $ra
 			
 			
