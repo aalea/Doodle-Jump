@@ -50,13 +50,24 @@ main:
 	jal jump
 	j Exit
 	
+Exit:
+	li $v0, 10 # terminate the program gracefully
+	syscall
+	
 setup:
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	
 	jal drawPlatforms
 	jal drawDoodler
-	#jr $ra
+	
+	lw $ra, ($sp)
+	addi $sp, $sp, 4
+	jr $ra
+	
 sleep:	
 	li $v0, 32
-	li $a0, 1000
+	li $a0, 500
 	syscall
 	jr $ra
 	
@@ -94,7 +105,7 @@ UPDATE_LOOP_DRAWING_PLATFORM_THREE: 	addi $t4, $t4, 1 # increment counter by 1
 			 		j START_LOOP_DRAWING_PLATFORM_THREE
 EXIT_LOOP_DRAWING_PLATFORM_THREE: 
 	
-	#jr $ra # now all three platforms have been drawn
+	jr $ra # now all three platforms have been drawn
 	
 	
 drawDoodler:
@@ -121,10 +132,9 @@ EXIT_INNER_LOOP_DRAWING_DOODLER: 	subi $t3, $t3, 20 # set cursor to first
 UPDATE_OUTER_LOOP_DRAWING_DOODLER: 	addi $t4, $t4, 1 # increment counter by 1
 			 		j START_OUTER_LOOP_DRAWING_DOODLER
 EXIT_OUTER_LOOP_DRAWING_DOODLER: 
-	#jr $ra
+	jr $ra
 	
 recolourPixelsUnderDoodler:
-
 	lw $t0, displayAddress
 	lw $t1, backgroundColour
 	lw $t2, doodlerLocation
@@ -138,10 +148,30 @@ START_LOOP_COLOUR_PIXELS_UNDER_DOODLER:		beq $t4, $t5, EXIT_LOOP_COLOUR_PIXELS_U
 						addi $t3, $t3, 4 # increment the cursor by 4 to target the next address in display
 UPDATE_LOOP_COLOUR_PIXELS_UNDER_DOODLER: 	addi $t4, $t4, 1 # increment counter by 1
 			 			j START_LOOP_COLOUR_PIXELS_UNDER_DOODLER
-EXIT_LOOP_COLOUR_PIXELS_UNDER_DOODLER: 		j SUGARPIE
+EXIT_LOOP_COLOUR_PIXELS_UNDER_DOODLER: 		jr $ra
+
+recolourPixelsOverDoodler:
+	lw $t0, displayAddress
+	lw $t1, backgroundColour
+	lw $t2, doodlerLocation
+	add $t3, $t0, $t2 # create $t3 starting at left-topmost 
+	subi $t3, $t3, 512 # pixel of doodler, will be used as cursor
+	
+	add $t4, $zero, $zero # set init value to 0
+	addi $t5, $zero, 5 # set loop stop val to 5 (loop repeats 5 times)
+
+START_LOOP_COLOUR_PIXELS_OVER_DOODLER:		beq $t4, $t5, EXIT_LOOP_COLOUR_PIXELS_OVER_DOODLER # branch if counter is 5
+						sw $t1, 0($t3) # paint the pixel at the cursor's address
+						addi $t3, $t3, 4 # increment the cursor by 4 to target the next address in display
+UPDATE_LOOP_COLOUR_PIXELS_OVER_DOODLER: 	addi $t4, $t4, 1 # increment counter by 1
+			 			j START_LOOP_COLOUR_PIXELS_OVER_DOODLER
+EXIT_LOOP_COLOUR_PIXELS_OVER_DOODLER: 		jr $ra
 
 
 jump:
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	
 	lw $t0, doodlerLocation
 	
 	add $t8, $zero, $zero # set init value to 0
@@ -149,41 +179,40 @@ jump:
 START_LOOP_JUMP_UP:	beq $t8, $t9, EXIT_LOOP_JUMP_UP # branch if counter is 7
 			# 1. Update Doodler's position by 1 up
 			jal recolourPixelsUnderDoodler
+			
+			lw $t0, doodlerLocation
+			
 			subi $t0, $t0, 128
 			sw $t0, doodlerLocation
 	
 			# 2. Redraw Doodler
 			jal drawDoodler
+			
 			jal sleep
+			
 UPDATE_LOOP_JUMP_UP: 	addi $t8, $t8, 1 # increment counter by 1
 			j START_LOOP_JUMP_UP
-EXIT_LOOP_JUMP_UP: 
-	
-	# 3. Repeat until position has been increased by 7
-	
-	# 4. Update Doodler's position by 1 down
-	# 5. Redraw Doodler
-	
-		add $t8, $zero, $zero # set init value to 0
+EXIT_LOOP_JUMP_UP: 	
+
+	add $t8, $zero, $zero # reset init value to 0
 	addi $t9, $zero, 7 # set loop stop val to 7 (loop repeats 7 times)
-START_LOOP_JUMP_UP:	beq $t8, $t9, EXIT_LOOP_JUMP_UP # branch if counter is 7
+START_LOOP_JUMP_DOWN:	beq $t8, $t9, EXIT_LOOP_JUMP_DOWN # branch if counter is 7
 			# 1. Update Doodler's position by 1 up
-			jal recolourPixelsUnderDoodler
-SUGARPIE:		subi $t0, $t0, 128
+			jal recolourPixelsOverDoodler
+			
+			lw $t0, doodlerLocation
+			
+			addi $t0, $t0, 128
 			sw $t0, doodlerLocation
 	
 			# 2. Redraw Doodler
 			jal drawDoodler
+			
 			jal sleep
-UPDATE_LOOP_JUMP_UP: 	addi $t8, $t8, 1 # increment counter by 1
-			j START_LOOP_JUMP_UP
-EXIT_LOOP_JUMP_UP: 
-	# 6. Repeat until position has decreased by 7
-	# 7. Initiate jump again
-	jr $ra
-	
-	
-	
-Exit:
-	li $v0, 10 # terminate the program gracefully
-	syscall
+			
+UPDATE_LOOP_JUMP_DOWN: 	addi $t8, $t8, 1 # increment counter by 1
+			j START_LOOP_JUMP_DOWN
+EXIT_LOOP_JUMP_DOWN: 
+			lw $ra, ($sp)
+			addi $sp, $sp, 4
+			j jump
