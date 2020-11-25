@@ -185,8 +185,8 @@ EXIT_OUTER_LOOP_DRAWING_OVER_DOODLER:
 
 keyPressHandler:
 	lw $t0, doodlerLocation
-	lw $t1, keyPressedListener
-	lw $t2, keyPressed # store the ASCII value of the key that was pressed
+	lw $t1, 0xffff0000
+	lw $t2, 0xffff0004 # store the ASCII value of the key that was pressed
 			
 	# check for a key press
 	bne $t1, 1, KEY_NOT_PRESSED
@@ -207,7 +207,8 @@ NOT_A_K_KEY_PRESS:	#check if the key press was 's'
 			#handle s key press
 			# TODO
 			
-KEY_NOT_PRESSED:	sw $t0, doodlerLocation
+KEY_NOT_PRESSED:	
+			sw $t0, doodlerLocation
 			jr $ra
 
 jump:
@@ -280,9 +281,20 @@ CHECKING_PLATFORM_THREE:
 			#adjust $t3 to use in greater than or equal branch condition 
 			subi $t3, $t1, 100
 			
-			ble $t0, $t2, NO_COLLISION
-		       	bgt $t0, $t3, NO_COLLISION	
+			#ble $t0, $t2, NO_COLLISION
+		       	#bgt $t0, $t3, NO_COLLISION	
+		       	#j HANDLE_COLLISION # handle colliding with platform 3
+			
+			#CAUSES INFINITE JUMP FOR SOME REASON
+			ble $t0, $t2, CHECKING_BOTTOM_OF_SCREEN
+		       	bgt $t0, $t3, CHECKING_BOTTOM_OF_SCREEN	
 		       	j HANDLE_COLLISION # handle colliding with platform 3
+		       	
+CHECKING_BOTTOM_OF_SCREEN:
+			addi $t1, $zero, 4096 # last possible pixel
+			ble $t0, $t1, NO_COLLISION	
+		       	j Exit # handle colliding with bottom of screen
+			
 	# 4.1. If Doodler's position is on top of platform, restart jump from current position
 HANDLE_COLLISION:	j jump
 
