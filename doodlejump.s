@@ -33,18 +33,19 @@
 	keyPressed: .word 0xffff0004 # the ASCII value of the key that was pressed
 	
 	# offset of the leftmost pixel's location from the base address
-	platformOneLocation: .word 4020 
-	platformTwoLocation: .word 2096
-	platformThreeLocation: .word 256
+	#platformOneLocation: .word 4020 
+	#platformTwoLocation: .word 2096
+	#platformThreeLocation: .word 256
 	
 	platformsArray: .word 0:5
+	nextPlatformToRedraw: .word 0
 	
 	# offset of the left-bottommost pixel's location from the base address
 	doodlerLocation: .word 3896 #1968 #3896
 	
 	platformColour: .word 0xe9dc9e
 	doodlerColour: .word 0xafe99e
-	backgroundColour: .word 0x000000
+	backgroundColour: .word 0x4a2772
 	
 .text
 
@@ -63,6 +64,7 @@ setup:
 	sw $ra, ($sp)
 	
 	jal generatePlatforms
+	jal drawBackground
 	jal drawPlatforms
 	jal drawDoodler
 	
@@ -143,14 +145,30 @@ generateRandomNumber: # requires params for upper and lower bounds
 	addi $sp, $sp, -4
 	sw $a0, ($sp)
 	jr $ra
+
+drawBackground:
+	lw $s0, displayAddress
+	lw $s1, backgroundColour
+	
+	add $t0, $zero, $s0 # counter
+	addi $t1, $s0, 4096 
+		
+START_LOOP_DRAWING_BACKGROUND:	bge $t0, $t1, EXIT_LOOP_DRAWING_BACKGROUND
+				sw $s1, ($t0)
+
+UPDATE_LOOP_DRAWING_BACKGROUND:	addi $t0, $t0, 4 # to access the next memory location
+				j START_LOOP_DRAWING_BACKGROUND
+
+EXIT_LOOP_DRAWING_BACKGROUND:	jr $ra # now the background has been drawn
 	
 	
 drawPlatforms:
-	lw $s0, displayAddress # $t0 stores the base address for display
-	lw $s1, platformColour # $t1 stores the colour of the platforms
+	lw $s0, displayAddress # $s0 stores the base address for display
+	lw $s1, platformColour # $s1 stores the colour of the platforms
 	
 	la $t8, platformsArray
 	addi $t0, $zero, 0 # will be used as counter
+	addi $t1, $zero, 5 
 	
 START_OUTER_LOOP_DRAWING_PLATFORMS:	bge $t0, $t1, EXIT_OUTER_LOOP_DRAWING_PLATFORMS # iterates through index 0-4 of platforms
 					sll $t2, $t0, 2
