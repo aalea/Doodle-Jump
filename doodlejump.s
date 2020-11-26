@@ -37,6 +37,8 @@
 	platformTwoLocation: .word 2096
 	platformThreeLocation: .word 256
 	
+	platformsArray: .word 0:5
+	
 	# offset of the left-bottommost pixel's location from the base address
 	doodlerLocation: .word 3896 #1968 #3896
 	
@@ -60,6 +62,7 @@ setup:
 	addi $sp, $sp, -4
 	sw $ra, ($sp)
 	
+	jal generatePlatforms
 	jal drawPlatforms
 	jal drawDoodler
 	
@@ -72,6 +75,75 @@ sleep:
 	li $a0, 250
 	syscall
 	jr $ra
+	
+generatePlatforms:
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	
+	la $t8, platformsArray
+	addi $t0, $zero, 1 # will be used as counter, starts at 1 bc we are hardcoding the first platform
+	addi $t1, $zero, 5 #the first platform is not random
+	
+	#hardcode first platform placement
+	addi $t5, $zero, 4020
+	sw $t5, 0($t8) # store 4020 at index 0 of the array of platforms
+	
+START_LOOP_GENERATE_PLATFORMS:	bge $t0, $t1, END_LOOP_GENERATE_PLATFORMS
+				sll $t2, $t0, 2
+				add $t3, $t8, $t2 # $t3 is addr(platformsArray[i])
+				# do random stuff
+				addi $t7, $zero, 192
+				# generate lower bound
+				subi $t6, $t0, 1 # we want 0 times 192, 1 times 192, 2 times 192, and 3 times 192
+				mult $t6, $t7
+				mflo $t6 # result should not be more than 32 bits
+				# store lower bound on stack
+				addi $sp, $sp, -4
+				sw $t6, ($sp)
+				# generate upper bound
+				addi $t6, $zero, 192
+				mult $t6, $t0 # we want 1 times 192, 2 times 192, 3 times 192, and 4 times 192	
+				mflo $t6 # result should not be more than 32 bits			
+				# store upper bound on stack
+				addi $sp, $sp, -4
+				sw $t6, ($sp)
+				
+				jal generateRandomNumber
+				# retrieve random number on stack
+				lw $t5, ($sp)
+				addi $sp, $sp, 4
+				# set curr platform position
+				addi $t6, $zero, 4
+				mult $t5, $t6
+				mflo $t5 # result should not be more than 32 bits
+				sw $t5, 0($t3)
+
+
+UPDATE_LOOP_GENERATE_PLATFORMS:	addi $t0, $t0, 1 # increment counter by 1
+				j START_LOOP_GENERATE_PLATFORMS
+
+END_LOOP_GENERATE_PLATFORMS:	# now all positions for platforms have been set
+	
+	lw $ra, ($sp)
+	addi $sp, $sp, 4
+	jr $ra
+	
+generateRandomNumber: # requires params for upper and lower bounds
+    	li $v0, 42  #generates the random number.
+    	li $a0, 0
+    	# retrieve upper bound on stack
+	lw $a1, ($sp) #Here you set $a1 to the max bound.
+	addi $sp, $sp, 4
+    	syscall
+    	# retrieve lower bound on stack
+    	lw $t6, ($sp) 
+    	addi $sp, $sp, 4
+    	add $a0, $a0, $t6
+	# store random number on stack (use t2 and t3)
+	addi $sp, $sp, -4
+	sw $a0, ($sp)
+	jr $ra
+	
 	
 drawPlatforms:
 	lw $t0, displayAddress # $t0 stores the base address for display
@@ -218,7 +290,7 @@ jump:
 	lw $t0, doodlerLocation
 	
 	add $t8, $zero, $zero # set init value to 0
-	addi $t9, $zero, 7 # set loop stop val to 7 (loop repeats 7 times)
+	addi $t9, $zero, 9 # set loop stop val to 7 (loop repeats 7 times)
 START_LOOP_JUMP_UP:	beq $t8, $t9, EXIT_LOOP_JUMP_UP # branch if counter is 7
 			# 1. Update Doodler's position by 1 up
 			jal recolourPixelsOverDoodler
