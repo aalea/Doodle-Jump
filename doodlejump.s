@@ -264,8 +264,10 @@ EXIT_OUTER_LOOP_DRAWING_OVER_DOODLER:
 	jr $ra
 
 keyPressHandler:
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
 	lw $t0, doodlerLocation
-	lw $t1, 0xffff0000
+	lw $t1, 0xffff0000 # store if a key was pressed
 	lw $t2, 0xffff0004 # store the ASCII value of the key that was pressed
 			
 	# check for a key press
@@ -285,10 +287,33 @@ NOT_J_KEY_PRESS:	#check if the key press was 'k'
 NOT_A_K_KEY_PRESS:	#check if the key press was 's'
 			bne $t2, 115, KEY_NOT_PRESSED
 			#handle s key press
-			# TODO
-			
+			jal pause
 KEY_NOT_PRESSED:	
 			sw $t0, doodlerLocation
+			
+			lw $ra, ($sp)
+			addi $sp, $sp, 4
+			jr $ra
+			
+pause:
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	# enter loop that checks if input changed and if not, sleep for 1 sec and repeat
+	lw $t1, 0xffff0000 # store if a key was pressed
+	lw $t2, 0xffff0004 # store the ASCII value of the key that was pressed
+	addi $t3, $zero, 1
+	addi $t4, $zero, 115
+	
+START_PAUSE_LOOP:	beq $t1, $t3, EXIT_PAUSE_LOOP
+			jal sleep
+			
+UPDATE_PAUSE_LOOP:	lw $t1, 0xffff0000 # store if a key was pressed
+			lw $t2, 0xffff0004 # store the ASCII value of the key that was pressed
+			j START_PAUSE_LOOP
+
+EXIT_PAUSE_LOOP:	bne $t2, $t4, START_PAUSE_LOOP
+			lw $ra, ($sp)
+			addi $sp, $sp, 4
 			jr $ra
 
 jump:
