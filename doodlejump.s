@@ -51,6 +51,7 @@
 
 main:
 	jal setup
+	jal waitForStart
 	jal sleep
 	jal jump
 	j Exit
@@ -270,6 +271,27 @@ UPDATE_OUTER_LOOP_DRAWING_DOODLER: 	addi $t4, $t4, 1 # increment counter by 1
 EXIT_OUTER_LOOP_DRAWING_DOODLER: 
 	jr $ra
 	
+waitForStart:	# NEED TO MERGE WITH pause
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	# enter loop that checks if input changed and if not, sleep for 1 sec and repeat
+	lw $t1, 0xffff0000 # store if a key was pressed
+	lw $t2, 0xffff0004 # store the ASCII value of the key that was pressed
+	addi $t3, $zero, 1
+	addi $t4, $zero, 115
+	
+START_WAIT_LOOP:	beq $t1, $t3, EXIT_WAIT_LOOP
+			jal sleep
+			
+UPDATE_WAIT_LOOP:	lw $t1, 0xffff0000 # store if a key was pressed
+			lw $t2, 0xffff0004 # store the ASCII value of the key that was pressed
+			j START_WAIT_LOOP
+
+EXIT_WAIT_LOOP:		bne $t2, $t4, START_WAIT_LOOP
+			lw $ra, ($sp)
+			addi $sp, $sp, 4
+			jr $ra
+	
 recolourPixelsUnderDoodler:
 	lw $t0, displayAddress
 	lw $t1, backgroundColour
@@ -321,7 +343,14 @@ keyPressHandler:
 			
 	# check for a key press
 	bne $t1, 1, KEY_NOT_PRESSED
-			
+	
+	# check if the key press was 's'
+	bne $t2, 115, NOT_A_S_KEY_PRESS
+	# handle 's' key press
+	jal resetDoodlerPosition
+	j main
+
+NOT_A_S_KEY_PRESS:		
 	# check if the key press was 'j'
 	bne $t2, 106, NOT_J_KEY_PRESS
 	# handle j key press
@@ -364,6 +393,11 @@ EXIT_PAUSE_LOOP:	bne $t2, $t4, START_PAUSE_LOOP
 			lw $ra, ($sp)
 			addi $sp, $sp, 4
 			jr $ra
+			
+resetDoodlerPosition:
+	addi $t0, $zero, 3896
+	sw $t0, doodlerLocation
+	jr $ra
 
 jump:
 	addi $sp, $sp, -4
