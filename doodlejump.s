@@ -130,6 +130,55 @@ END_LOOP_GENERATE_PLATFORMS:	# now all positions for platforms have been set
 	addi $sp, $sp, 4
 	jr $ra
 	
+generateNewPlatform: # generate a new platform and replace the one at index nextPlatformToDraw with it.
+		     # then increment that index by 1
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	
+	lw $t1, nextPlatformToRedraw # load the index to access the platformsArray with
+	sll $t1, $t1, 2 # multiple index by 4 to correctly address a word in memory
+	
+	# t3 is the addr of platform at nextPlatformToDraw
+	la $t2, platformsArray
+	add $t3, $t2, $t1 # t3 is addr(platformsArray[nextPlatformToDraw])
+		     
+	# store lower bound on stack
+	addi $t6, $zero, 0
+	addi $sp, $sp, -4
+	sw $t6, ($sp)
+		
+	# store upper bound on stack
+	addi $t6, $zero, 192	
+	addi $sp, $sp, -4
+	sw $t6, ($sp)
+				
+	jal generateRandomNumber
+	
+	# retrieve random number on stack
+	lw $t5, ($sp)
+	addi $sp, $sp, 4
+	# set curr platform position
+	addi $t6, $zero, 4
+	mult $t5, $t6
+	mflo $t5 # result should not be more than 32 bits
+	sw $t5, 0($t3)
+	
+	# increment nextPlatformToDraw by 1 if under 3, if 3 set to 0
+	bge $t1, 3, RESET_PLATFORM_INDEX
+	addi $t1, $t1, 1
+	j FINISHED_ADJUSTING_INDEX
+
+RESET_PLATFORM_INDEX:	addi $t1, $zero, 0	
+
+FINISHED_ADJUSTING_INDEX:
+	sw $t1, nextPlatformToRedraw
+	
+	lw $ra, ($sp)
+	addi $sp, $sp, 4
+	jr $ra
+	
+	
+	
 generateRandomNumber: # requires params for upper and lower bounds
     	li $v0, 42  #generates the random number.
     	li $a0, 0
@@ -332,6 +381,8 @@ START_LOOP_JUMP_UP:	beq $t8, $t9, EXIT_LOOP_JUMP_UP # branch if counter is 13
 			lw $t0, doodlerLocation
 			subi $t0, $t0, 128
 			sw $t0, doodlerLocation
+			
+			jal handleScroll
 	
 			# 2. Redraw Doodler
 			jal drawDoodler
@@ -344,6 +395,58 @@ EXIT_LOOP_JUMP_UP: 	j fall
 			lw $ra, ($sp)
 			addi $sp, $sp, 4
 			jr $ra
+			
+handleScroll:
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	# if doodlerLocation < half of screen
+	lw $t0, doodlerLocation
+	addi $t1, $zero, 2044 # approx the middle point of the school
+	
+	bgt $t0, $t1, DONT_SCROLL # if the doodler is in the lower half of the screen, don't scroll
+		# then add some constant times 128 to all objects
+		jal scrollObjects
+		# generate a new platform to replace the one at index nextPlatformToDraw and increment that index by 1
+		jal generateNewPlatform
+		jal generateNewPlatform
+		jal generateNewPlatform
+		# redraw all the platforms (jump function takes care of doodler)
+		jal drawBackground
+		jal drawPlatforms
+DONT_SCROLL:
+	lw $ra, ($sp)
+	addi $sp, $sp, 4
+	jr $ra
+	
+scrollObjects: # add a constant times 128 to all objects
+	addi $t2, $zero, 16 # the scroll constant
+	addi $t3, $zero, 128
+	mult $t2, $t3
+	mflo $t2
+	
+	lw $t0, doodlerLocation
+	
+	# scroll doodler
+	add $t0, $t0, $t2
+	sw $t0, doodlerLocation
+	
+	la $t5, platformsArray
+
+	# scroll platforms
+	add $t3, $zero, $zero # set init value to 0
+	addi $t4, $zero, 4 # set loop stop val to 4 (loop repeats 4 times)
+START_LOOP_SCROLLING_PLATFORMS:		beq $t3, $t4, EXIT_LOOP_SCROLLING_PLATFORMS # branch if counter is 4
+					sll $t6, $t3, 2
+					add $t6, $t5, $t6 # t6 is the addr of the curr platform
+					
+					lw $t7, ($t6)
+					add $t7, $t7, $t2
+					sw $t7, ($t6)
+					
+UPDATE_LOOP_SCROLLING_PLATFORMS:	addi $t3, $t3, 1
+					j START_LOOP_SCROLLING_PLATFORMS
+EXIT_LOOP_SCROLLING_PLATFORMS:		jr $ra	
+
 			
 fall:
 	#addi $sp, $sp, -4
