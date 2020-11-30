@@ -18,7 +18,7 @@
 #
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
-# 1. (fill in the feature, if any)
+# 1. Press 'q' to pause
 # 2. (fill in the feature, if any)
 # 3. (fill in the feature, if any)
 # ... (add more if necessary)
@@ -284,9 +284,9 @@ NOT_J_KEY_PRESS:	#check if the key press was 'k'
 			#handle k key press
 			addi $t0, $t0, 4 # move to right by 1 pixel
 			
-NOT_A_K_KEY_PRESS:	#check if the key press was 's'
-			bne $t2, 115, KEY_NOT_PRESSED
-			#handle s key press
+NOT_A_K_KEY_PRESS:	#check if the key press was 'q'
+			bne $t2, 113, KEY_NOT_PRESSED
+			#handle q key press
 			jal pause
 KEY_NOT_PRESSED:	
 			sw $t0, doodlerLocation
@@ -302,7 +302,7 @@ pause:
 	lw $t1, 0xffff0000 # store if a key was pressed
 	lw $t2, 0xffff0004 # store the ASCII value of the key that was pressed
 	addi $t3, $zero, 1
-	addi $t4, $zero, 115
+	addi $t4, $zero, 113
 	
 START_PAUSE_LOOP:	beq $t1, $t3, EXIT_PAUSE_LOOP
 			jal sleep
