@@ -19,7 +19,7 @@
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
 # 1. Press 'q' to pause
-# 2. (fill in the feature, if any)
+# 2. Game Over screen and restart with 's'
 # 3. (fill in the feature, if any)
 # ... (add more if necessary)
 #
@@ -45,11 +45,12 @@
 	
 	platformColour: .word 0xe9dc9e
 	doodlerColour: .word 0xafe99e
-	backgroundColour: .word 0x4a2772
+	backgroundColour: .word 0x2c1f30
 	
 .text
 
 main:
+	jal resetDoodlerPosition
 	jal setup
 	jal waitForStart
 	jal sleep
@@ -514,7 +515,7 @@ END_LOOP_CHECKING_PLATFORMS:
 CHECKING_BOTTOM_OF_SCREEN:
 			addi $t1, $zero, 4096 # last possible pixel
 			ble $s0, $t1, NO_COLLISION	
-		       	j Exit # handle colliding with bottom of screen
+		       	j gameOver # handle colliding with bottom of screen
 			
 	# 4.1. If Doodler's position is on top of platform, restart jump from current position
 HANDLE_COLLISION:	j jump
@@ -547,5 +548,303 @@ EXIT_LOOP_JUMP_DOWN: 	j fall
 	lw $ra, ($sp)
 	addi $sp, $sp, 4
 	jr $ra
-			
+	
+gameOver:	
+	# write Game Over on screen
+	jal writeGameOver
+	jal waitForStart
+	j main
+	
+writeGameOver:
+	lw $t0, displayAddress # $t0 stores the base address for display
+	li $t2, 0xffffff # $t2 stores the white colour code
+	# write G
+	sw $t2, 520($t0) # paint the first (top-left) unit green.
+	sw $t2, 524($t0) # paint the second unit on the first row green. Why$t0+4?
+	sw $t2, 528($t0)
+	sw $t2, 532($t0)
+	sw $t2, 644($t0) # paint the first unit on the second row green. Why +128?
+	sw $t2, 648($t0)
+	sw $t2, 652($t0)
+	sw $t2, 656($t0)
+	sw $t2, 660($t0) # paint the first unit on the third row green
+	sw $t2, 664($t0)
+	sw $t2, 772($t0)
+	sw $t2, 776($t0)
+	sw $t2, 788($t0) # paint the first unit on the fourth row green
+	sw $t2, 792($t0)
+	sw $t2, 900($t0)
+	sw $t2, 920($t0)
+	sw $t2, 1028($t0)
+	sw $t2, 1156($t0)
+	sw $t2, 1168($t0) # paint the first unit on the third row green
+	sw $t2, 1172($t0)
+	sw $t2, 1176($t0)
+	sw $t2, 1284($t0)
+	sw $t2, 1300($t0) # paint the first unit on the fourth row green
+	sw $t2, 1304($t0)
+	sw $t2, 1412($t0)
+	sw $t2, 1416($t0)
+	sw $t2, 1428($t0)
+	sw $t2, 1432($t0) # paint the first unit on the third row green
+	sw $t2, 1540($t0)
+	sw $t2, 1544($t0)
+	sw $t2, 1548($t0)
+	sw $t2, 1552($t0) # paint the first unit on the fourth row green
+	sw $t2, 1556($t0)
+	sw $t2, 1560($t0)
+	sw $t2, 1672($t0)
+	sw $t2, 1676($t0)
+	sw $t2, 1680($t0) # paint the first unit on the third row green
+	sw $t2, 1684($t0)
+	# write a
+	sw $t2, 676($t0) # paint the first (top-left) unit green.
+	sw $t2, 680($t0) # paint the second unit on the first row green. Why$t0+4?
+	sw $t2, 684($t0)
+	sw $t2, 688($t0)
+	sw $t2, 800($t0) # paint the first unit on the second row green. Why +128?
+	sw $t2, 804($t0)
+	sw $t2, 808($t0)
+	sw $t2, 812($t0)
+	sw $t2, 816($t0) # paint the first unit on the third row green
+	sw $t2, 820($t0)
+	sw $t2, 928($t0)
+	sw $t2, 932($t0)
+	sw $t2, 944($t0) # paint the first unit on the fourth row green
+	sw $t2, 948($t0)
+	sw $t2, 1056($t0)
+	sw $t2, 1076($t0)
+	sw $t2, 1188($t0)
+	sw $t2, 1192($t0)
+	sw $t2, 1196($t0) # paint the first unit on the third row green
+	sw $t2, 1204($t0)
+	sw $t2, 1312($t0)
+	sw $t2, 1316($t0)
+	sw $t2, 1320($t0) # paint the first unit on the fourth row green
+	sw $t2, 1324($t0)
+	sw $t2, 1328($t0)
+	sw $t2, 1332($t0)
+	sw $t2, 1440($t0)
+	sw $t2, 1456($t0) # paint the first unit on the third row green
+	sw $t2, 1460($t0)
+	sw $t2, 1568($t0)
+	sw $t2, 1572($t0)
+	sw $t2, 1576($t0) # paint the first unit on the fourth row green
+	sw $t2, 1580($t0)
+	sw $t2, 1584($t0)
+	sw $t2, 1588($t0)
+	sw $t2, 1700($t0)
+	sw $t2, 1704($t0) # paint the first unit on the third row green
+	sw $t2, 1708($t0)
+	sw $t2, 1712($t0)
+	# write m
+	sw $t2, 828($t0) # paint the first (top-left) unit green.
+	sw $t2, 832($t0) # paint the second unit on the first row green. Why$t0+4?
+	sw $t2, 836($t0)
+	sw $t2, 840($t0)
+	sw $t2, 848($t0) # paint the first unit on the second row green. Why +128?
+	sw $t2, 852($t0)
+	sw $t2, 856($t0)
+	sw $t2, 956($t0)
+	sw $t2, 960($t0) # paint the first unit on the third row green
+	sw $t2, 964($t0)
+	sw $t2, 968($t0)
+	sw $t2, 972($t0)
+	sw $t2, 976($t0) # paint the first unit on the fourth row green
+	sw $t2, 980($t0)
+	sw $t2, 984($t0)
+	sw $t2, 988($t0)
+	sw $t2, 1084($t0)
+	sw $t2, 1088($t0)
+	sw $t2, 1096($t0) # paint the first unit on the third row green
+	sw $t2, 1100($t0)
+	sw $t2, 1104($t0)
+	sw $t2, 1112($t0)
+	sw $t2, 1116($t0) # paint the first unit on the fourth row green
+	sw $t2, 1212($t0)
+	sw $t2, 1228($t0)
+	sw $t2, 1244($t0)
+	sw $t2, 1340($t0)
+	sw $t2, 1356($t0) # paint the first unit on the third row green
+	sw $t2, 1372($t0)
+	sw $t2, 1468($t0)
+	sw $t2, 1484($t0)
+	sw $t2, 1500($t0) # paint the first unit on the fourth row green
+	sw $t2, 1596($t0)
+	sw $t2, 1612($t0)
+	sw $t2, 1628($t0)
+	sw $t2, 1724($t0)
+	sw $t2, 1740($t0) # paint the first unit on the third row green
+	sw $t2, 1756($t0)
+	# write e
+	sw $t2, 744($t0) # paint the first (top-left) unit green.
+	sw $t2, 748($t0) # paint the second unit on the first row green. Why$t0+4?
+	sw $t2, 752($t0)
+	sw $t2, 756($t0)
+	sw $t2, 868($t0) # paint the first unit on the second row green. Why +128?
+	sw $t2, 872($t0)
+	sw $t2, 876($t0)
+	sw $t2, 880($t0)
+	sw $t2, 884($t0) # paint the first unit on the third row green
+	sw $t2, 888($t0)
+	sw $t2, 996($t0)
+	sw $t2, 1000($t0)
+	sw $t2, 1012($t0) # paint the first unit on the fourth row green
+	sw $t2, 1016($t0)
+	sw $t2, 1124($t0)
+	sw $t2, 1144($t0)
+	sw $t2, 1252($t0)
+	sw $t2, 1256($t0)
+	sw $t2, 1260($t0) # paint the first unit on the third row green
+	sw $t2, 1264($t0)
+	sw $t2, 1268($t0)
+	sw $t2, 1272($t0)
+	sw $t2, 1380($t0) # paint the first unit on the fourth row green
+	sw $t2, 1508($t0)
+	sw $t2, 1512($t0)
+	sw $t2, 1524($t0)
+	sw $t2, 1528($t0)
+	sw $t2, 1636($t0) # paint the first unit on the third row green
+	sw $t2, 1640($t0)
+	sw $t2, 1644($t0)
+	sw $t2, 1648($t0)
+	sw $t2, 1652($t0) # paint the first unit on the fourth row green
+	sw $t2, 1656($t0)
+	sw $t2, 1768($t0)
+	sw $t2, 1772($t0)
+	sw $t2, 1776($t0)
+	sw $t2, 1780($t0)
+	# write O
+	sw $t2, 2312($t0) # paint the first (top-left) unit green.
+	sw $t2, 2316($t0) # paint the second unit on the first row green. Why$t0+4?
+	sw $t2, 2320($t0)
+	sw $t2, 2324($t0)
+	sw $t2, 2328($t0)
+	sw $t2, 2436($t0) # paint the first unit on the second row green. Why +128?
+	sw $t2, 2440($t0)
+	sw $t2, 2444($t0)
+	sw $t2, 2448($t0)
+	sw $t2, 2452($t0) # paint the first unit on the third row green
+	sw $t2, 2456($t0)
+	sw $t2, 2460($t0)
+	sw $t2, 2564($t0)
+	sw $t2, 2568($t0) # paint the first unit on the fourth row green
+	sw $t2, 2584($t0)
+	sw $t2, 2588($t0)
+	sw $t2, 2692($t0)
+	sw $t2, 2716($t0)
+	sw $t2, 2820($t0)
+	sw $t2, 2844($t0) # paint the first unit on the third row green
+	sw $t2, 2948($t0)
+	sw $t2, 2972($t0)
+	sw $t2, 3076($t0)
+	sw $t2, 3100($t0) # paint the first unit on the fourth row green
+	sw $t2, 3204($t0)
+	sw $t2, 3208($t0)
+	sw $t2, 3224($t0)
+	sw $t2, 3228($t0)
+	sw $t2, 3332($t0) # paint the first unit on the third row green
+	sw $t2, 3336($t0)
+	sw $t2, 3340($t0)
+	sw $t2, 3344($t0)
+	sw $t2, 3348($t0) # paint the first unit on the fourth row green
+	sw $t2, 3352($t0)
+	sw $t2, 3356($t0)
+	sw $t2, 3464($t0)
+	sw $t2, 3468($t0)
+	sw $t2, 3472($t0)
+	sw $t2, 3476($t0)
+	sw $t2, 3480($t0)
+	# write v
+	sw $t2, 2596($t0) # paint the first (top-left) unit green.
+	sw $t2, 2620($t0) # paint the second unit on the first row green. Why$t0+4?
+	sw $t2, 2724($t0)
+	sw $t2, 2748($t0)
+	sw $t2, 2852($t0)
+	sw $t2, 2856($t0) # paint the first unit on the second row green. Why +128?
+	sw $t2, 2872($t0)
+	sw $t2, 2876($t0)
+	sw $t2, 2980($t0)
+	sw $t2, 2984($t0) # paint the first unit on the third row green
+	sw $t2, 3000($t0)
+	sw $t2, 3004($t0)
+	sw $t2, 3112($t0)
+	sw $t2, 3116($t0) # paint the first unit on the fourth row green
+	sw $t2, 3124($t0)
+	sw $t2, 3128($t0)
+	sw $t2, 3240($t0)
+	sw $t2, 3244($t0)
+	sw $t2, 3248($t0)
+	sw $t2, 3252($t0) # paint the first unit on the third row green
+	sw $t2, 3256($t0)
+	sw $t2, 3372($t0)
+	sw $t2, 3376($t0)
+	sw $t2, 3380($t0) # paint the first unit on the fourth row green
+	sw $t2, 3504($t0)
+	# write e
+	sw $t2, 2632($t0) # paint the first (top-left) unit green.
+	sw $t2, 2636($t0) # paint the second unit on the first row green. Why$t0+4?
+	sw $t2, 2640($t0)
+	sw $t2, 2644($t0)
+	sw $t2, 2756($t0)
+	sw $t2, 2760($t0) # paint the first unit on the second row green. Why +128?
+	sw $t2, 2764($t0)
+	sw $t2, 2768($t0)
+	sw $t2, 2772($t0)
+	sw $t2, 2776($t0) # paint the first unit on the third row green
+	sw $t2, 2884($t0)
+	sw $t2, 2888($t0)
+	sw $t2, 2900($t0)
+	sw $t2, 2904($t0) # paint the first unit on the fourth row green
+	sw $t2, 3012($t0)
+	sw $t2, 3032($t0)
+	sw $t2, 3140($t0)
+	sw $t2, 3144($t0)
+	sw $t2, 3148($t0)
+	sw $t2, 3152($t0) # paint the first unit on the third row green
+	sw $t2, 3156($t0)
+	sw $t2, 3160($t0)
+	sw $t2, 3268($t0)
+	sw $t2, 3396($t0) # paint the first unit on the fourth row green
+	sw $t2, 3400($t0)
+	sw $t2, 3412($t0)
+	sw $t2, 3416($t0)
+	sw $t2, 3524($t0)
+	sw $t2, 3528($t0) # paint the first unit on the third row green
+	sw $t2, 3532($t0)
+	sw $t2, 3536($t0)
+	sw $t2, 3540($t0)
+	sw $t2, 3544($t0) # paint the first unit on the fourth row green
+	sw $t2, 3656($t0)
+	sw $t2, 3660($t0)
+	sw $t2, 3664($t0)
+	sw $t2, 3668($t0)
+	# write r
+	sw $t2, 2528($t0) # paint the first (top-left) unit green.
+	sw $t2, 2536($t0) # paint the second unit on the first row green. Why$t0+4?
+	sw $t2, 2540($t0)
+	sw $t2, 2544($t0)
+	sw $t2, 2656($t0)
+	sw $t2, 2660($t0) # paint the first unit on the second row green. Why +128?
+	sw $t2, 2664($t0)
+	sw $t2, 2668($t0)
+	sw $t2, 2672($t0)
+	sw $t2, 2676($t0) # paint the first unit on the third row green
+	sw $t2, 2784($t0)
+	sw $t2, 2788($t0)
+	sw $t2, 2792($t0)
+	sw $t2, 2796($t0) # paint the first unit on the fourth row green
+	sw $t2, 2800($t0)
+	sw $t2, 2804($t0)
+	sw $t2, 2808($t0)
+	sw $t2, 2912($t0) # paint the first (top-left) unit green.
+	sw $t2, 2916($t0) # paint the second unit on the first row green. Why$t0+4?
+	sw $t2, 2936($t0)
+	sw $t2, 3040($t0)
+	sw $t2, 3168($t0)
+	sw $t2, 3296($t0) # paint the first unit on the second row green. Why +128?
+	sw $t2, 3424($t0)
+	sw $t2, 3552($t0)
+	
+	jr $ra		
 			
