@@ -29,16 +29,16 @@
 
 .data
 	displayAddress:.word 0x10008000
-	keyPressedListener: .word 0xffff0000 # 1 if a key has been pressed
-	keyPressed: .word 0xffff0004 # the ASCII value of the key that was pressed
+	#keyPressedListener: .word 0xffff0000 # 1 if a key has been pressed
+	#keyPressed: .word 0xffff0004 # the ASCII value of the key that was pressed
 	
 	# offset of the leftmost pixel's location from the base address
 	#platformOneLocation: .word 4020 
 	#platformTwoLocation: .word 2096
 	#platformThreeLocation: .word 256
 	
-	platformsArray: .word 0:5
-	nextPlatformToRedraw: .word 0
+	platformsArray: .word 0:4
+	nextPlatformToRedraw: .word 3
 	
 	# offset of the left-bottommost pixel's location from the base address
 	doodlerLocation: .word 3896 #1968 #3896
@@ -85,29 +85,31 @@ generatePlatforms:
 	sw $ra, ($sp)
 	
 	la $t8, platformsArray
-	addi $t0, $zero, 1 # will be used as counter, starts at 1 bc we are hardcoding the first platform
-	addi $t1, $zero, 5 #the first platform is not random
+	addi $t0, $zero, 0 # will be used as counter
+	addi $t1, $zero, 3 #the first platform is not random, hardcoding last platform
 	
-	#hardcode first platform placement
+	#hardcode last platform placement
 	addi $t5, $zero, 4020
-	sw $t5, 0($t8) # store 4020 at index 0 of the array of platforms
+	sw $t5, 12($t8) # store 4020 at index 3 of the array of platforms
 	
 START_LOOP_GENERATE_PLATFORMS:	bge $t0, $t1, END_LOOP_GENERATE_PLATFORMS
 				sll $t2, $t0, 2
 				add $t3, $t8, $t2 # $t3 is addr(platformsArray[i])
 				# do random stuff
-				addi $t7, $zero, 192
-				# generate lower bound
-				subi $t6, $t0, 1 # we want 0 times 192, 1 times 192, 2 times 192, and 3 times 192
+				addi $t7, $zero, 256
+				# generate lower bound (64 + 256*(counter-1))
+				add $t6, $t0, $zero # we want 0 times 256, 1 times 256, 2 times 256
 				mult $t6, $t7
 				mflo $t6 # result should not be more than 32 bits
+				addi $t6, $t6, 64
 				# store lower bound on stack
 				addi $sp, $sp, -4
 				sw $t6, ($sp)
-				# generate upper bound
-				addi $t6, $zero, 192
-				mult $t6, $t0 # we want 1 times 192, 2 times 192, 3 times 192, and 4 times 192	
-				mflo $t6 # result should not be more than 32 bits			
+				# generate upper bound (249 + 256*(counter-1))
+				add $t6, $t0, $zero # we want 0 times 256, 1 times 256, 2 times 256
+				mult $t6, $t7
+				mflo $t6 # result should not be more than 32 bits
+				addi $t6, $t6, 249			
 				# store upper bound on stack
 				addi $sp, $sp, -4
 				sw $t6, ($sp)
@@ -150,7 +152,7 @@ generateNewPlatform: # generate a new platform and replace the one at index next
 	sw $t6, ($sp)
 		
 	# store upper bound on stack
-	addi $t6, $zero, 192	
+	addi $t6, $zero, 185
 	addi $sp, $sp, -4
 	sw $t6, ($sp)
 				
@@ -187,12 +189,14 @@ generateRandomNumber: # requires params for upper and lower bounds
     	# retrieve upper bound on stack
 	lw $a1, ($sp) #Here you set $a1 to the max bound.
 	addi $sp, $sp, 4
-    	syscall
-    	# retrieve lower bound on stack
+	# retrieve lower bound on stack
     	lw $t6, ($sp) 
     	addi $sp, $sp, 4
-    	add $a0, $a0, $t6
+    	sub $a1, $a1, $t6 # adjust range to be 0 to (max-min)
+    	syscall
+    	
 	# store random number on stack (use t2 and t3)
+	add $a0, $a0, $t6 # adjust rand num to be in range min to max
 	addi $sp, $sp, -4
 	sw $a0, ($sp)
 	jr $ra
@@ -219,7 +223,7 @@ drawPlatforms:
 	
 	la $t8, platformsArray
 	addi $t0, $zero, 0 # will be used as counter
-	addi $t1, $zero, 5 
+	addi $t1, $zero, 4 
 	
 START_OUTER_LOOP_DRAWING_PLATFORMS:	bge $t0, $t1, EXIT_OUTER_LOOP_DRAWING_PLATFORMS # iterates through index 0-4 of platforms
 					sll $t2, $t0, 2
@@ -434,9 +438,9 @@ EXIT_LOOP_JUMP_UP: 	j fall
 handleScroll:
 	addi $sp, $sp, -4
 	sw $ra, ($sp)
-	# if doodlerLocation < half of screen
+	# if doodlerLocation < magenta stripe
 	lw $t0, doodlerLocation
-	addi $t1, $zero, 2044 # approx the middle point of the school
+	addi $t1, $zero, 2304 # approx the middle point of the school
 	
 	bgt $t0, $t1, DONT_SCROLL # if the doodler is in the lower half of the screen, don't scroll
 		# then add some constant times 128 to all objects
