@@ -33,7 +33,7 @@
 	#keyPressed: .word 0xffff0004 # the ASCII value of the key that was pressed
 	
 	# offset of the leftmost pixel's location from the base address
-	#platformOneLocation: .word 4020 
+	bottomPlatformLocation: .word 4020 # initially starts at 4020, will be stored during scrolling
 	#platformTwoLocation: .word 2096
 	#platformThreeLocation: .word 256
 	
@@ -46,6 +46,9 @@
 	platformColour: .word 0xe9dc9e
 	doodlerColour: .word 0xafe99e
 	backgroundColour: .word 0x2c1f30
+	
+	jumpLoopCounter: .word 0
+	jumpLoopStopVal: .word 0
 	
 .text
 
@@ -78,6 +81,7 @@ sleep:
 	li $v0, 32
 	li $a0, 100
 	syscall
+	
 	jr $ra
 	
 generatePlatforms:
@@ -89,7 +93,7 @@ generatePlatforms:
 	addi $t1, $zero, 3 #the first platform is not random, hardcoding last platform
 	
 	#hardcode last platform placement
-	addi $t5, $zero, 4020
+	lw $t5, bottomPlatformLocation
 	sw $t5, 12($t8) # store 4020 at index 3 of the array of platforms
 	
 START_LOOP_GENERATE_PLATFORMS:	bge $t0, $t1, END_LOOP_GENERATE_PLATFORMS
@@ -422,6 +426,12 @@ START_LOOP_JUMP_UP:	beq $t8, $t9, EXIT_LOOP_JUMP_UP # branch if counter is 13
 			sw $t0, doodlerLocation
 			
 			jal handleScroll
+			
+			sw $t8, jumpLoopCounter
+			sw $t9, jumpLoopStopVal
+			jal drawPlatforms
+			lw $t8, jumpLoopCounter
+			lw $t9, jumpLoopStopVal
 	
 			# 2. Redraw Doodler
 			jal drawDoodler
@@ -438,17 +448,15 @@ EXIT_LOOP_JUMP_UP: 	j fall
 handleScroll:
 	addi $sp, $sp, -4
 	sw $ra, ($sp)
-	# if doodlerLocation < magenta stripe
+	# if doodlerLocation < yellow stripe
 	lw $t0, doodlerLocation
-	addi $t1, $zero, 2304 # approx the middle point of the school
+	addi $t1, $zero, 256 # the starting pixel of the yellow stripe
 	
 	bgt $t0, $t1, DONT_SCROLL # if the doodler is in the lower half of the screen, don't scroll
 		# then add some constant times 128 to all objects
 		jal scrollObjects
 		# generate a new platform to replace the one at index nextPlatformToDraw and increment that index by 1
-		jal generateNewPlatform
-		jal generateNewPlatform
-		jal generateNewPlatform
+		jal generatePlatforms
 		# redraw all the platforms (jump function takes care of doodler)
 		jal drawBackground
 		jal drawPlatforms
@@ -458,7 +466,7 @@ DONT_SCROLL:
 	jr $ra
 	
 scrollObjects: # add a constant times 128 to all objects
-	addi $t2, $zero, 16 # the scroll constant
+	addi $t2, $zero, 25 # the scroll constant (moves yellow stripe to green stripe)
 	addi $t3, $zero, 128
 	mult $t2, $t3
 	mflo $t2
@@ -470,21 +478,26 @@ scrollObjects: # add a constant times 128 to all objects
 	sw $t0, doodlerLocation
 	
 	la $t5, platformsArray
+	lw $t5, 0($t5) # load platform in the yellow stripe
+	add $t5, $t5, $t2 # scroll that top platform in the yellow stripe 25 units down
+	sw $t5, bottomPlatformLocation
+	
 
 	# scroll platforms
-	add $t3, $zero, $zero # set init value to 0
-	addi $t4, $zero, 4 # set loop stop val to 4 (loop repeats 4 times)
-START_LOOP_SCROLLING_PLATFORMS:		beq $t3, $t4, EXIT_LOOP_SCROLLING_PLATFORMS # branch if counter is 4
-					sll $t6, $t3, 2
-					add $t6, $t5, $t6 # t6 is the addr of the curr platform
-					
-					lw $t7, ($t6)
-					add $t7, $t7, $t2
-					sw $t7, ($t6)
-					
-UPDATE_LOOP_SCROLLING_PLATFORMS:	addi $t3, $t3, 1
-					j START_LOOP_SCROLLING_PLATFORMS
-EXIT_LOOP_SCROLLING_PLATFORMS:		jr $ra	
+#	add $t3, $zero, $zero # set init value to 0
+#	addi $t4, $zero, 4 # set loop stop val to 4 (loop repeats 4 times)
+#START_LOOP_SCROLLING_PLATFORMS:		beq $t3, $t4, EXIT_LOOP_SCROLLING_PLATFORMS # branch if counter is 4
+#					sll $t6, $t3, 2
+#					add $t6, $t5, $t6 # t6 is the addr of the curr platform
+#					
+#					lw $t7, ($t6)
+#					add $t7, $t7, $t2
+#					sw $t7, ($t6)
+#					
+#UPDATE_LOOP_SCROLLING_PLATFORMS:	addi $t3, $t3, 1
+#					j START_LOOP_SCROLLING_PLATFORMS
+#EXIT_LOOP_SCROLLING_PLATFORMS:		
+	jr $ra	
 
 			
 fall:
