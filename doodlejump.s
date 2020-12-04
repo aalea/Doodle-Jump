@@ -14,7 +14,7 @@
 #
 # Which milestone is reached in this submission?
 # (See the assignment handout for descriptions of the milestones)
-# - Milestone 1/2/3/4/5 (choose the one the applies)
+# - Milestone 4 (choose the one the applies)
 #
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
@@ -49,6 +49,10 @@
 	
 	jumpLoopCounter: .word 0
 	jumpLoopStopVal: .word 0
+	
+	score: .word 0:8
+	
+	spaceChar: .asciiz " "	
 	
 .text
 
@@ -510,7 +514,7 @@ fall:
 	lw $s0, doodlerLocation
 	la $t8, platformsArray
 	add $t0, $zero, $zero
-	addi $t4, $zero, 5
+	addi $t4, $zero, 4
 	#checking platforms
 START_LOOP_CHECKING_PLATFORMS:	bge $t0, $t4, END_LOOP_CHECKING_PLATFORMS
 				sll $t5, $t0, 2
@@ -535,7 +539,8 @@ CHECKING_BOTTOM_OF_SCREEN:
 		       	j gameOver # handle colliding with bottom of screen
 			
 	# 4.1. If Doodler's position is on top of platform, restart jump from current position
-HANDLE_COLLISION:	j jump
+HANDLE_COLLISION:	jal updateScore
+			j jump
 
 NO_COLLISION: 
 	# 4.2. Otherwise, check keyboard input
@@ -566,9 +571,200 @@ EXIT_LOOP_JUMP_DOWN: 	j fall
 	addi $sp, $sp, 4
 	jr $ra
 	
+updateScore:
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	
+	addi $a0, $zero, 1 # initialize function return val
+	addi $s0, $zero, 7 # initialize loop counter (will count in reverse)
+START_LOOP_UPDATE_SCORE:	beq $a0, $zero, EXIT_LOOP_UPDATE_SCORE # branch if $a0 is 0 to EXIT_LOOP_UPDATE_SCORE
+				beq $s0, -1, gameOver # branch if loop counter is -1 to gameOver
+				addi $sp, $sp, -4
+				sw $s0, ($sp) # put curr digit on stack
+				jal checkScoreDigit # check score at the current digit (loop counter will tell you the current digit) (this will update $a0)
+UPDATE_LOOP_UPDATE_SCORE:	subi $s0, $s0, 1 # subtract counter by 1
+				j START_LOOP_UPDATE_SCORE # jump
+EXIT_LOOP_UPDATE_SCORE:		#jal printScore # call printScore
+				# print space
+				li $v0, 4
+    				la $a0, spaceChar
+    				syscall
+    				# print digits
+    				li $v0, 1
+    				la $t0, score
+    				lw $a0, ($t0)
+    				syscall
+    				lw $a0, 4($t0)
+    				syscall
+    				lw $a0, 8($t0)
+    				syscall
+    				lw $a0, 12($t0)
+    				syscall
+    				lw $a0, 16($t0)
+    				syscall
+    				lw $a0, 20($t0)
+    				syscall
+    				lw $a0, 24($t0)
+    				syscall
+    				lw $a0, 28($t0)
+    				syscall
+    				
+				
+    				
+	
+	lw $ra, ($sp)
+	addi $sp, $sp, 4
+	jr $ra
+	
+printScore:	
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	jal clearScore # clear score
+	# load displayAddress
+	# set loop counter to 0
+	# boolean value to say if you wanna start printing numbers
+START_LOOP_PRINTING_SCORE:	# branch if the loop counter is greater than or equal to 8 to EXIT
+				# obtain the address in the array to the current score digit
+				# save the current score digit
+				# calculate 4 + (16*loop counter)
+				# sum above and displayAddress
+				
+	CHECK_ZERO:	# branch if not zero to CHECK_ONE
+			# branch if boolean is 0 to UPDATE
+			# put sum on stack
+			# drawZero
+			# jump to UPDATE
+			
+	CHECK_ONE:	# branch if not one to CHECK_TWO
+			# set boolean value to 1
+			# put sum on stack
+			# drawOne
+			# jump to UPDATE
+
+	CHECK_TWO:	# branch if not one to CHECK_THREE
+			# set boolean value to 1
+			# put sum on stack
+			# drawTwo
+			# jump to UPDATE
+
+	CHECK_THREE:	# branch if not one to CHECK_FOUR
+			# set boolean value to 1
+			# put sum on stack
+			# drawThree
+			# jump to UPDATE
+
+	CHECK_FOUR:	# branch if not one to CHECK_FIVE
+			# set boolean value to 1
+			# put sum on stack
+			# drawFour
+			# jump to UPDATE
+
+	CHECK_FIVE:	# branch if not one to CHECK_SIX
+			# set boolean value to 1
+			# put sum on stack
+			# drawFive
+			# jump to UPDATE
+
+	CHECK_SIX:	# branch if not one to CHECK_SEVEN
+			# set boolean value to 1
+			# put sum on stack
+			# drawSix
+			# jump to UPDATE
+
+	CHECK_SEVEN:	# branch if not one to CHECK_EIGHT
+			# set boolean value to 1
+			# put sum on stack
+			# drawSeven
+			# jump to UPDATE
+
+	CHECK_EIGHT:	# branch if not one to CHECK_NINE
+			# set boolean value to 1
+			# put sum on stack
+			# drawEight
+			# jump to UPDATE
+
+	CHECK_NINE:	# set boolean value to 1
+			# put sum on stack
+			# drawNine
+	
+
+UPDATE_LOOP_PRINTING_SCORE:	# increment the loop counter by 1
+				# jump to START	
+
+EXIT_LOOP_PRINTING_SCORE:		
+	lw $ra, ($sp)
+	addi $sp, $sp, 4
+	jr $ra
+	
+	
+checkScoreDigit: # retrieve current digit number on stack
+	lw $t1, ($sp) 
+	addi $sp, $sp, 4
+	# get address of current digit
+	sll $t1, $t1, 2 # multiply current digit by 4
+	la $t0, score
+	add $t0, $t0, $t1 # correctly target the address of the current digit
+	# load current digit
+	lw $t1, ($t0)
+	
+	bge $t1, 9, RESET_CURRENT_DIGIT # branch if current digit == 9
+	addi $t1, $t1, 1 # then increment current digit by 1 
+	sw $t1, ($t0) # store score digit in memory
+	
+	addi $a0, $zero, 0
+	jr $ra # and return 0 by setting $a0
+	
+RESET_CURRENT_DIGIT:	# else if current digit == 9, 
+			sw $zero, ($t0) # then set current digit to 0 
+			addi $a0, $zero, 1 
+			jr $ra # and return 1
+			
+clearScore:
+	lw $t1, backgroundColour
+	lw $t0, displayAddress	
+	addi $t0, $t0, 4 # address of the current number
+	addi $t2, $zero, 0 # loop counter
+	addi $t3, $zero, 16 # constant 16
+	
+START_LOOP_CLEARING_SCREEN:	# branch if loop counter is greater than or equal to 8
+	
+	sw $t1, ($t0)
+	sw $t1, 4($t0)
+	sw $t1, 8($t0)
+	sw $t1, 136($t0)
+	sw $t1, 264($t0)
+	sw $t1, 392($t0)
+	sw $t1, 520($t0)
+	sw $t1, 128($t0)
+	sw $t1, 256($t0)
+	sw $t1, 384($t0)
+	sw $t1, 512($t0)
+	sw $t1, 516($t0)
+	sw $t1, 260($t0)
+	
+UPDATE_LOOP_CLEARING_SCREEN:	addi $t2, $t2, 1
+				mult $t2, $t3
+				mflo $t4
+				add $t0, $t0, $t4
+
+EXIT_LOOP_CLEARING_SCREEN:	jr $ra
+	
+	
 gameOver:	
 	# write Game Over on screen
 	jal writeGameOver
+	
+	# reset score
+	la $t0, score
+	sw $zero, 0($t0)
+	sw $zero, 4($t0)
+	sw $zero, 8($t0)
+	sw $zero, 12($t0)
+	sw $zero, 16($t0)
+	sw $zero, 20($t0)
+	sw $zero, 24($t0)
+	sw $zero, 28($t0)
+	
 	jal waitForStart
 	j main
 	
@@ -864,4 +1060,207 @@ writeGameOver:
 	sw $t2, 3552($t0)
 	
 	jr $ra		
+	
+drawZero: # requires x (top left corner of number to be drawn) on the stack
+	# retrieve x on stack
+	lw $t0, ($sp) #Here you set $t0 to x
+	addi $sp, $sp, 4
+	li $t1, 0xff0000 # $t1 stores the red colour code
+	
+	# 0
+	sw $t1, ($t0)
+	sw $t1, 4($t0)
+	sw $t1, 8($t0)
+	sw $t1, 136($t0)
+	sw $t1, 264($t0)
+	sw $t1, 392($t0)
+	sw $t1, 520($t0)
+	sw $t1, 128($t0)
+	sw $t1, 256($t0)
+	sw $t1, 384($t0)
+	sw $t1, 512($t0)
+	sw $t1, 516($t0)
+	
+	jr $ra
+
+drawOne: # requires x (top left corner of number to be drawn) on the stack
+	# retrieve x on stack
+	lw $t0, ($sp) #Here you set $t0 to x
+	addi $sp, $sp, 4
+	li $t1, 0xff0000 # $t1 stores the red colour code
+	
+	# 1
+	sw $t1, 8($t0)
+	sw $t1, 136($t0)
+	sw $t1, 264($t0)
+	sw $t1, 392($t0)
+	sw $t1, 520($t0)
+	
+	jr $ra
+
+drawTwo: # requires x (top left corner of number to be drawn) on the stack
+	# retrieve x on stack
+	lw $t0, ($sp) #Here you set $t0 to x
+	addi $sp, $sp, 4
+	li $t1, 0xff0000 # $t1 stores the red colour code
+	
+	# 2
+	sw $t1, ($t0)
+	sw $t1, 4($t0)
+	sw $t1, 8($t0)
+	sw $t1, 136($t0)
+	sw $t1, 264($t0)
+	sw $t1, 520($t0)
+	sw $t1, 256($t0)
+	sw $t1, 384($t0)
+	sw $t1, 512($t0)
+	sw $t1, 516($t0)
+	sw $t1, 260($t0)
+	
+	jr $ra
+
+drawThree: # requires x (top left corner of number to be drawn) on the stack
+	# retrieve x on stack
+	lw $t0, ($sp) #Here you set $t0 to x
+	addi $sp, $sp, 4
+	li $t1, 0xff0000 # $t1 stores the red colour code
+	
+	# 3
+	sw $t1, ($t0)
+	sw $t1, 4($t0)
+	sw $t1, 8($t0)
+	sw $t1, 136($t0)
+	sw $t1, 264($t0)
+	sw $t1, 392($t0)
+	sw $t1, 520($t0)
+	sw $t1, 256($t0)
+	sw $t1, 512($t0)
+	sw $t1, 516($t0)
+	sw $t1, 260($t0)
+	
+	jr $ra
+
+drawFour: # requires x (top left corner of number to be drawn) on the stack
+	# retrieve x on stack
+	lw $t0, ($sp) #Here you set $t0 to x
+	addi $sp, $sp, 4
+	li $t1, 0xff0000 # $t1 stores the red colour code
+	
+	# 4
+	sw $t1, ($t0)
+	sw $t1, 8($t0)
+	sw $t1, 136($t0)
+	sw $t1, 264($t0)
+	sw $t1, 392($t0)
+	sw $t1, 520($t0)
+	sw $t1, 128($t0)
+	sw $t1, 256($t0)
+	sw $t1, 260($t0)
+	
+	jr $ra
+
+drawFive: # requires x (top left corner of number to be drawn) on the stack
+	# retrieve x on stack
+	lw $t0, ($sp) #Here you set $t0 to x
+	addi $sp, $sp, 4
+	li $t1, 0xff0000 # $t1 stores the red colour code
+	
+	# 5
+	sw $t1, ($t0)
+	sw $t1, 4($t0)
+	sw $t1, 8($t0)
+	sw $t1, 264($t0)
+	sw $t1, 392($t0)
+	sw $t1, 520($t0)
+	sw $t1, 128($t0)
+	sw $t1, 256($t0)
+	sw $t1, 512($t0)
+	sw $t1, 516($t0)
+	sw $t1, 260($t0)
+	
+	jr $ra
+
+drawSix: # requires x (top left corner of number to be drawn) on the stack
+	# retrieve x on stack
+	lw $t0, ($sp) #Here you set $t0 to x
+	addi $sp, $sp, 4
+	li $t1, 0xff0000 # $t1 stores the red colour code
+	
+	# 6
+	sw $t1, ($t0)
+	sw $t1, 4($t0)
+	sw $t1, 8($t0)
+	sw $t1, 264($t0)
+	sw $t1, 392($t0)
+	sw $t1, 520($t0)
+	sw $t1, 128($t0)
+	sw $t1, 256($t0)
+	sw $t1, 384($t0)
+	sw $t1, 512($t0)
+	sw $t1, 516($t0)
+	sw $t1, 260($t0)
+	
+	jr $ra
+
+drawSeven: # requires x (top left corner of number to be drawn) on the stack
+	# retrieve x on stack
+	lw $t0, ($sp) #Here you set $t0 to x
+	addi $sp, $sp, 4
+	li $t1, 0xff0000 # $t1 stores the red colour code
+	
+	# 7
+	sw $t1, ($t0)
+	sw $t1, 4($t0)
+	sw $t1, 8($t0)
+	sw $t1, 136($t0)
+	sw $t1, 264($t0)
+	sw $t1, 392($t0)
+	sw $t1, 520($t0)
+	
+	jr $ra
+
+drawEight: # requires x (top left corner of number to be drawn) on the stack
+	# retrieve x on stack
+	lw $t0, ($sp) #Here you set $t0 to x
+	addi $sp, $sp, 4
+	li $t1, 0xff0000 # $t1 stores the red colour code
+	
+	# 8
+	sw $t1, ($t0)
+	sw $t1, 4($t0)
+	sw $t1, 8($t0)
+	sw $t1, 136($t0)
+	sw $t1, 264($t0)
+	sw $t1, 392($t0)
+	sw $t1, 520($t0)
+	sw $t1, 128($t0)
+	sw $t1, 256($t0)
+	sw $t1, 384($t0)
+	sw $t1, 512($t0)
+	sw $t1, 516($t0)
+	sw $t1, 260($t0)
+	
+	jr $ra
+
+drawNine: # requires x (top left corner of number to be drawn) on the stack
+	# retrieve x on stack
+	lw $t0, ($sp) #Here you set $t0 to x
+	addi $sp, $sp, 4
+	li $t1, 0xff0000 # $t1 stores the red colour code
+	
+	# 9
+	sw $t1, ($t0)
+	sw $t1, 4($t0)
+	sw $t1, 8($t0)
+	sw $t1, 136($t0)
+	sw $t1, 264($t0)
+	sw $t1, 392($t0)
+	sw $t1, 520($t0)
+	sw $t1, 128($t0)
+	sw $t1, 256($t0)
+	sw $t1, 512($t0)
+	sw $t1, 516($t0)
+	sw $t1, 260($t0)
+	
+	jr $ra
 			
