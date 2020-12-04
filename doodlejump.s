@@ -584,7 +584,7 @@ START_LOOP_UPDATE_SCORE:	beq $a0, $zero, EXIT_LOOP_UPDATE_SCORE # branch if $a0 
 				jal checkScoreDigit # check score at the current digit (loop counter will tell you the current digit) (this will update $a0)
 UPDATE_LOOP_UPDATE_SCORE:	subi $s0, $s0, 1 # subtract counter by 1
 				j START_LOOP_UPDATE_SCORE # jump
-EXIT_LOOP_UPDATE_SCORE:		#jal printScore # call printScore
+EXIT_LOOP_UPDATE_SCORE:		jal printScore # call printScore
 				# print space
 				li $v0, 4
     				la $a0, spaceChar
@@ -620,76 +620,104 @@ printScore:
 	addi $sp, $sp, -4
 	sw $ra, ($sp)
 	jal clearScore # clear score
-	# load displayAddress
-	# set loop counter to 0
-	# boolean value to say if you wanna start printing numbers
-START_LOOP_PRINTING_SCORE:	# branch if the loop counter is greater than or equal to 8 to EXIT
-				# obtain the address in the array to the current score digit
-				# save the current score digit
+	lw $t9, displayAddress # load displayAddress
+	la $t6, score # load the address of the score array
+	addi $t8, $zero, 0 # set loop counter to 0
+	addi $t7, $zero, 0 # boolean value to say if you wanna start printing numbers
+START_LOOP_PRINTING_SCORE:	bge $t8, 8, EXIT_LOOP_PRINTING_SCORE # branch if the loop counter is greater than or equal to 8 to EXIT
+				# obtain the address in the array to the current score digit (is $t6)
+				sll $t5, $t8, 2 
+				add $t5, $t6, $t5 # this is the addr(score[curr digit])
+				lw $t5, ($t5) # save the current score digit
 				# calculate 4 + (16*loop counter)
+				addi $t4, $zero, 16
+				mult $t4, $t8
+				mflo $t4
+				addi $t4, $t4, 4
 				# sum above and displayAddress
+				add $t4, $t4, $t9
 				
-	CHECK_ZERO:	# branch if not zero to CHECK_ONE
-			# branch if boolean is 0 to UPDATE
-			# put sum on stack
-			# drawZero
-			# jump to UPDATE
+	CHECK_ZERO:	bne $t5, 0, CHECK_ONE # branch if not zero to CHECK_ONE
+			beq $t7, 0, UPDATE_LOOP_PRINTING_SCORE # branch if boolean is 0 to UPDATE
+			# put sum ($t4) on stack
+			addi $sp, $sp, -4
+			sw $t4, ($sp)
+			jal drawZero # drawZero
+			j UPDATE_LOOP_PRINTING_SCORE # jump to UPDATE
 			
-	CHECK_ONE:	# branch if not one to CHECK_TWO
-			# set boolean value to 1
+	CHECK_ONE:	bne $t5, 1, CHECK_TWO # branch if not one to CHECK_TWO
+			addi $t7, $zero, 1 # set boolean value to 1
 			# put sum on stack
-			# drawOne
-			# jump to UPDATE
+			addi $sp, $sp, -4
+			sw $t4, ($sp)
+			jal drawOne # drawOne
+			j UPDATE_LOOP_PRINTING_SCORE # jump to UPDATE
 
-	CHECK_TWO:	# branch if not one to CHECK_THREE
-			# set boolean value to 1
+	CHECK_TWO:	bne $t5, 2, CHECK_THREE # branch if not one to CHECK_THREE
+			addi $t7, $zero, 1 # set boolean value to 1
 			# put sum on stack
-			# drawTwo
-			# jump to UPDATE
+			addi $sp, $sp, -4
+			sw $t4, ($sp)
+			jal drawTwo # drawTwo
+			j UPDATE_LOOP_PRINTING_SCORE # jump to UPDATE
 
-	CHECK_THREE:	# branch if not one to CHECK_FOUR
-			# set boolean value to 1
+	CHECK_THREE:	bne $t5, 3, CHECK_FOUR # branch if not one to CHECK_FOUR
+			addi $t7, $zero, 1 # set boolean value to 1
 			# put sum on stack
-			# drawThree
-			# jump to UPDATE
+			addi $sp, $sp, -4
+			sw $t4, ($sp)
+			jal drawThree # drawThree
+			j UPDATE_LOOP_PRINTING_SCORE # jump to UPDATE
 
-	CHECK_FOUR:	# branch if not one to CHECK_FIVE
-			# set boolean value to 1
+	CHECK_FOUR:	bne $t5, 4, CHECK_FIVE # branch if not one to CHECK_FIVE
+			addi $t7, $zero, 1 # set boolean value to 1
 			# put sum on stack
-			# drawFour
-			# jump to UPDATE
+			addi $sp, $sp, -4
+			sw $t4, ($sp)
+			jal drawFour # drawFour
+			j UPDATE_LOOP_PRINTING_SCORE # jump to UPDATE
 
-	CHECK_FIVE:	# branch if not one to CHECK_SIX
-			# set boolean value to 1
+	CHECK_FIVE:	bne $t5, 5, CHECK_SIX # branch if not one to CHECK_SIX
+			addi $t7, $zero, 1 # set boolean value to 1
 			# put sum on stack
-			# drawFive
-			# jump to UPDATE
+			addi $sp, $sp, -4
+			sw $t4, ($sp)
+			jal drawFive # drawFive
+			j UPDATE_LOOP_PRINTING_SCORE # jump to UPDATE
 
-	CHECK_SIX:	# branch if not one to CHECK_SEVEN
-			# set boolean value to 1
+	CHECK_SIX:	bne $t5, 6, CHECK_SEVEN # branch if not one to CHECK_SEVEN
+			addi $t7, $zero, 1 # set boolean value to 1
 			# put sum on stack
-			# drawSix
-			# jump to UPDATE
+			addi $sp, $sp, -4
+			sw $t4, ($sp)
+			jal drawSix # drawSix
+			j UPDATE_LOOP_PRINTING_SCORE # jump to UPDATE
 
-	CHECK_SEVEN:	# branch if not one to CHECK_EIGHT
-			# set boolean value to 1
+	CHECK_SEVEN:	bne $t5, 7, CHECK_EIGHT # branch if not one to CHECK_EIGHT
+			addi $t7, $zero, 1 # set boolean value to 1
 			# put sum on stack
-			# drawSeven
-			# jump to UPDATE
+			addi $sp, $sp, -4
+			sw $t4, ($sp)
+			jal drawSeven # drawSeven
+			j UPDATE_LOOP_PRINTING_SCORE # jump to UPDATE
 
-	CHECK_EIGHT:	# branch if not one to CHECK_NINE
-			# set boolean value to 1
+	CHECK_EIGHT:	bne $t5, 8, CHECK_NINE # branch if not one to CHECK_NINE
+			addi $t7, $zero, 1 # set boolean value to 1
 			# put sum on stack
-			# drawEight
-			# jump to UPDATE
+			addi $sp, $sp, -4
+			sw $t4, ($sp)
+			jal drawEight # drawEight
+			j UPDATE_LOOP_PRINTING_SCORE # jump to UPDATE
 
-	CHECK_NINE:	# set boolean value to 1
+	CHECK_NINE:	addi $t7, $zero, 1 # set boolean value to 1
 			# put sum on stack
-			# drawNine
+			addi $sp, $sp, -4
+			sw $t4, ($sp)
+			jal drawNine # drawNine
 	
 
-UPDATE_LOOP_PRINTING_SCORE:	# increment the loop counter by 1
-				# jump to START	
+UPDATE_LOOP_PRINTING_SCORE:	addi $t8, $t8, 1 # increment the loop counter by 1
+				j START_LOOP_PRINTING_SCORE # jump to START	
 
 EXIT_LOOP_PRINTING_SCORE:		
 	lw $ra, ($sp)
@@ -726,7 +754,7 @@ clearScore:
 	addi $t2, $zero, 0 # loop counter
 	addi $t3, $zero, 16 # constant 16
 	
-START_LOOP_CLEARING_SCREEN:	# branch if loop counter is greater than or equal to 8
+START_LOOP_CLEARING_SCREEN:	bge $t2, 8, EXIT_LOOP_CLEARING_SCREEN # branch if loop counter is greater than or equal to 8
 	
 	sw $t1, ($t0)
 	sw $t1, 4($t0)
@@ -743,9 +771,8 @@ START_LOOP_CLEARING_SCREEN:	# branch if loop counter is greater than or equal to
 	sw $t1, 260($t0)
 	
 UPDATE_LOOP_CLEARING_SCREEN:	addi $t2, $t2, 1
-				mult $t2, $t3
-				mflo $t4
-				add $t0, $t0, $t4
+				addi $t0, $t0, 16
+				j START_LOOP_CLEARING_SCREEN
 
 EXIT_LOOP_CLEARING_SCREEN:	jr $ra
 	
@@ -764,6 +791,10 @@ gameOver:
 	sw $zero, 20($t0)
 	sw $zero, 24($t0)
 	sw $zero, 28($t0)
+	
+	# reset initial platform
+	addi $t0, $zero, 4020
+	sw $t0, bottomPlatformLocation
 	
 	jal waitForStart
 	j main
