@@ -43,9 +43,9 @@
 	# offset of the left-bottommost pixel's location from the base address
 	doodlerLocation: .word 3896 #1968 #3896
 	
-	platformColour: .word 0xe9dc9e
+	platformColour: .word 0xdefcfb
 	doodlerColour: .word 0xafe99e
-	backgroundColour: .word 0x2c1f30
+	backgroundColour: .word 0x0713fc
 	
 	jumpLoopCounter: .word 0
 	jumpLoopStopVal: .word 0
@@ -210,19 +210,49 @@ generateRandomNumber: # requires params for upper and lower bounds
 	jr $ra
 
 drawBackground:
-	lw $s0, displayAddress
+	lw $s0, displayAddress # $s0 is x
 	lw $s1, backgroundColour
-	
-	add $t0, $zero, $s0 # counter
-	addi $t1, $s0, 4096 
-		
-START_LOOP_DRAWING_BACKGROUND:	bge $t0, $t1, EXIT_LOOP_DRAWING_BACKGROUND
-				sw $s1, ($t0)
+	addi $s1, $s1, 10
+	add $t0, $zero, 0
 
-UPDATE_LOOP_DRAWING_BACKGROUND:	addi $t0, $t0, 4 # to access the next memory location
-				j START_LOOP_DRAWING_BACKGROUND
-
-EXIT_LOOP_DRAWING_BACKGROUND:	jr $ra # now the background has been drawn
+START_LOOP_COLOUR_GRADIENT:		bge $t0, 32, EXIT_LOOP_COLOUR_GRADIENT
+								sw $s1, ($s0)
+								sw $s1, 4($s0)
+								sw $s1, 8($s0)
+								sw $s1, 12($s0)
+								sw $s1, 16($s0)
+								sw $s1, 20($s0)
+								sw $s1, 24($s0)
+								sw $s1, 28($s0)
+								sw $s1, 32($s0)
+								sw $s1, 36($s0)
+								sw $s1, 40($s0)
+								sw $s1, 44($s0)
+								sw $s1, 48($s0)
+								sw $s1, 52($s0)
+								sw $s1, 56($s0)
+								sw $s1, 60($s0)
+								sw $s1, 64($s0)
+								sw $s1, 68($s0)
+								sw $s1, 72($s0)
+								sw $s1, 76($s0)
+								sw $s1, 80($s0)
+								sw $s1, 84($s0)
+								sw $s1, 88($s0)
+								sw $s1, 92($s0)
+								sw $s1, 96($s0)
+								sw $s1, 100($s0)
+								sw $s1, 104($s0)
+								sw $s1, 108($s0)
+								sw $s1, 112($s0)
+								sw $s1, 116($s0)
+								sw $s1, 120($s0)
+								sw $s1, 124($s0)
+UPDATE_LOOP_COLOUR_GRADIENT:	addi $s1, $s1, 8
+				addi $t0, $t0, 1
+				addi $s0, $s0, 128
+				j START_LOOP_COLOUR_GRADIENT
+EXIT_LOOP_COLOUR_GRADIENT:	jr $ra # now the background has been drawn
 	
 	
 drawPlatforms:
@@ -248,7 +278,25 @@ START_INNER_LOOP_DRAWING_PLATFORMS:	beq $t4, $t5, EXIT_INNER_LOOP_DRAWING_PLATFO
 					addi $t3, $t3, 4 # increment the cursor by 4 to target the next address in display
 UPDATE_INNER_LOOP_DRAWING_PLATFORMS: 	addi $t4, $t4, 1 # increment counter by 1
 			 		j START_INNER_LOOP_DRAWING_PLATFORMS
-EXIT_INNER_LOOP_DRAWING_PLATFORMS: 
+EXIT_INNER_LOOP_DRAWING_PLATFORMS: 	
+					# drawing rest of cloud
+					subi $s4, $s1, 40
+					add $t3, $s0, $s2
+					subi $t3, $t3, 128 # move cursor up by 1 row from leftmost pixel
+					addi $t3, $t3, 4
+					sw $s4, 0($t3) # paint the pixel at the cursor's address
+					sw $s4, 4($t3) 
+					sw $s4, 8($t3) 
+					sw $s4, 12($t3) 
+					sw $s4, 16($t3) 
+					addi $s4, $zero, 0xffffff
+					subi $t3, $t3, 128 # move cursor up by 1 row 
+					addi $t3, $t3, 4
+					sw $s1, 0($t3) # paint the pixel at the cursor's address
+					sw $s1, 4($t3) 
+					sw $s1, 8($t3)
+					
+					
 	
 UPDATE_OUTER_LOOP_DRAWING_PLATFORMS:	addi $t0, $t0, 1
 					j START_OUTER_LOOP_DRAWING_PLATFORMS
@@ -325,6 +373,16 @@ recolourPixelsOverDoodler:
 	lw $t0, displayAddress
 	lw $t1, backgroundColour
 	lw $t2, doodlerLocation
+	
+	addi $t1, $t1, 10
+	addi $t4, $zero, 128
+	addi $t5, $zero, 8
+	div $t2, $t4
+	mflo $t4
+	mult $t4, $t5
+	mflo $t4 # this is the amount you need to add to the colour of the bg
+	add $t1, $t1, $t4 # this is the appropriate colour for the row
+	
 	add $t3, $t0, $t2 # create $t3 starting at left-bottommost pixel of doodler, will be used as cursor
 	
 	add $t4, $zero, $zero # set outer init value to 0
@@ -343,6 +401,7 @@ EXIT_INNER_LOOP_DRAWING_OVER_DOODLER: 	subi $t3, $t3, 20 # set cursor to first
 					add $t6, $zero, $zero # reset inner init value to 0
 					
 UPDATE_OUTER_LOOP_DRAWING_OVER_DOODLER: 	addi $t4, $t4, 1 # increment counter by 1
+						subi $t1, $t1, 8
 			 		j START_OUTER_LOOP_DRAWING_OVER_DOODLER
 EXIT_OUTER_LOOP_DRAWING_OVER_DOODLER: 
 	jr $ra
@@ -558,6 +617,8 @@ START_LOOP_JUMP_DOWN:	#beq $t8, $t9, EXIT_LOOP_JUMP_DOWN # branch if counter is 
 			lw $t0, doodlerLocation
 			addi $t0, $t0, 128
 			sw $t0, doodlerLocation
+			
+			jal drawPlatforms
 	
 			# 2. Redraw Doodler
 			jal drawDoodler
@@ -754,24 +815,40 @@ clearScore:
 	addi $t2, $zero, 0 # loop counter
 	addi $t3, $zero, 16 # constant 16
 	
+	addi $t1, $t1, 10
+	
 START_LOOP_CLEARING_SCREEN:	bge $t2, 8, EXIT_LOOP_CLEARING_SCREEN # branch if loop counter is greater than or equal to 8
 	
 	sw $t1, ($t0)
 	sw $t1, 4($t0)
 	sw $t1, 8($t0)
-	sw $t1, 136($t0)
-	sw $t1, 264($t0)
-	sw $t1, 392($t0)
-	sw $t1, 520($t0)
+	
+	addi $t1, $t1, 8
+	
 	sw $t1, 128($t0)
+	sw $t1, 136($t0)
+		
+	addi $t1, $t1, 8
+	
 	sw $t1, 256($t0)
+	sw $t1, 260($t0)
+	sw $t1, 264($t0)
+	
+	addi $t1, $t1, 8
+	
 	sw $t1, 384($t0)
+	sw $t1, 392($t0)
+	
+	addi $t1, $t1, 8
+	
 	sw $t1, 512($t0)
 	sw $t1, 516($t0)
-	sw $t1, 260($t0)
+	sw $t1, 520($t0)
+	
 	
 UPDATE_LOOP_CLEARING_SCREEN:	addi $t2, $t2, 1
 				addi $t0, $t0, 16
+				subi $t1, $t1, 32
 				j START_LOOP_CLEARING_SCREEN
 
 EXIT_LOOP_CLEARING_SCREEN:	jr $ra
@@ -801,7 +878,7 @@ gameOver:
 	
 writeGameOver:
 	lw $t0, displayAddress # $t0 stores the base address for display
-	li $t2, 0xffffff # $t2 stores the white colour code
+	li $t2, 0x00ff00 # $t2 stores the green colour code
 	# write G
 	sw $t2, 520($t0) # paint the first (top-left) unit green.
 	sw $t2, 524($t0) # paint the second unit on the first row green. Why$t0+4?
