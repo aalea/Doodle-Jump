@@ -29,7 +29,8 @@
 ######################################################################
 
 .data
-	displayAddress:.word 0x10008000
+	displayAddress: .word 0x10008000
+	displayBufferAddress: .word 0
 	#keyPressedListener: .word 0xffff0000 # 1 if a key has been pressed
 	#keyPressed: .word 0xffff0004 # the ASCII value of the key that was pressed
 	
@@ -57,12 +58,15 @@
 	
 	score: .word 0:8
 	
-	spaceChar: .asciiz " "	
+	spaceChar: .asciiz " "
+	
+	displayBuffer: .word 0:4096	
 	
 .text
 
 main:
 	jal resetDoodlerPosition
+	jal setDisplayBufferAddress
 	jal setup
 	jal waitForStart
 	jal sleep
@@ -72,6 +76,32 @@ main:
 Exit:
 	li $v0, 10 # terminate the program gracefully
 	syscall
+	
+setDisplayBufferAddress:	
+	la $t0, displayBuffer
+	sw $t0, displayBufferAddress
+	jr $ra
+	
+loadBufferToScreen:
+	# load displayAddress
+	lw $s7, displayAddress
+	# load displayBufferAddress
+	lw $s6, displayBufferAddress
+	
+	# set a counter that starts at 0 (offset of displayAddress and displayBufferAddress)
+	addi $s5, $zero, 0
+	
+	# start a loop that iterates through each pixel in the buffer and paints the appropriate pixel on the actual screen
+START_LOOP_LOADING_BUFFER:	beq $s5, 4096, EXIT_LOOP_LOADING_BUFFER # branch if counter is equal to 4096	
+				add $s3, $s6, $s5 # calculate sum of displayBufferAddress + counter, which is an address
+				lw $s3, ($s3) # load value at address
+				add $s4, $s7, $s5 # calculate sum of displayAddress + counter, which is an address
+				sw $s3, ($s4) # store value into this address
+
+UPDATE_LOOP_LOADING_BUFFER:	addi $s5, $s5, 4 # add 4 to counter
+				j START_LOOP_LOADING_BUFFER # jump to loop start
+
+EXIT_LOOP_LOADING_BUFFER:	jr $ra
 	
 setup:
 	addi $sp, $sp, -4
@@ -87,10 +117,17 @@ setup:
 	jr $ra
 	
 sleep:	
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	
+	jal loadBufferToScreen
+	
 	li $v0, 32
 	li $a0, 100
 	syscall
 	
+	lw $ra, ($sp)
+	addi $sp, $sp, 4
 	jr $ra
 	
 generatePlatforms:
@@ -215,7 +252,7 @@ generateRandomNumber: # requires params for upper and lower bounds
 	jr $ra
 
 drawBackground:
-	lw $s0, displayAddress # $s0 is x
+	lw $s0, displayBufferAddress # $s0 is x
 	lw $s1, backgroundColour
 	addi $s1, $s1, 10
 	add $t0, $zero, 0
@@ -261,7 +298,7 @@ EXIT_LOOP_COLOUR_GRADIENT:	jr $ra # now the background has been drawn
 	
 	
 drawPlatforms:
-	lw $s0, displayAddress # $s0 stores the base address for display
+	lw $s0, displayBufferAddress # $s0 stores the base address for display
 	lw $s1, platformColour # $s1 stores the colour of the platforms
 	
 	la $t8, platformsArray
@@ -335,7 +372,7 @@ drawDoodler:
 #UPDATE_OUTER_LOOP_DRAWING_DOODLER: 	addi $t4, $t4, 1 # increment counter by 1
 #			 		j START_OUTER_LOOP_DRAWING_DOODLER
 #EXIT_OUTER_LOOP_DRAWING_DOODLER: 
-	lw $t0, displayAddress # $s0 is x
+	lw $t0, displayBufferAddress # $s0 is x
 	lw $t2, doodlerLocation
 	add $t0, $t0, $t2 # top left pixel of doodler
 	
@@ -405,7 +442,7 @@ EXIT_WAIT_LOOP:		bne $t2, $t4, START_WAIT_LOOP
 			jr $ra
 	
 recolourPixelsUnderDoodler:
-	lw $t0, displayAddress
+	lw $t0, displayBufferAddress
 	lw $t1, backgroundColour
 	lw $t2, doodlerLocation
 	add $t3, $t0, $t2 # create $t3 starting at left-bottommost pixel of doodler, will be used as cursor
@@ -421,7 +458,7 @@ UPDATE_LOOP_COLOUR_PIXELS_UNDER_DOODLER: 	addi $t4, $t4, 1 # increment counter b
 EXIT_LOOP_COLOUR_PIXELS_UNDER_DOODLER: 		jr $ra
 
 recolourPixelsOverDoodler:
-	lw $t0, displayAddress
+	lw $t0, displayBufferAddress
 	lw $t1, backgroundColour
 	lw $t2, doodlerLocation
 	
@@ -739,7 +776,7 @@ printScore:
 	addi $sp, $sp, -4
 	sw $ra, ($sp)
 	jal clearScore # clear score
-	lw $t9, displayAddress # load displayAddress
+	lw $t9, displayBufferAddress # load displayBufferAddress
 	la $t6, score # load the address of the score array
 	addi $t8, $zero, 0 # set loop counter to 0
 	addi $t7, $zero, 0 # boolean value to say if you wanna start printing numbers
@@ -753,7 +790,7 @@ START_LOOP_PRINTING_SCORE:	bge $t8, 8, EXIT_LOOP_PRINTING_SCORE # branch if the 
 				mult $t4, $t8
 				mflo $t4
 				addi $t4, $t4, 4
-				# sum above and displayAddress
+				# sum above and displayBufferAddress
 				add $t4, $t4, $t9
 				
 	CHECK_ZERO:	bne $t5, 0, CHECK_ONE # branch if not zero to CHECK_ONE
@@ -868,7 +905,7 @@ RESET_CURRENT_DIGIT:	# else if current digit == 9,
 			
 clearScore:
 	lw $t1, backgroundColour
-	lw $t0, displayAddress	
+	lw $t0, displayBufferAddress	
 	addi $t0, $t0, 4 # address of the current number
 	addi $t2, $zero, 0 # loop counter
 	addi $t3, $zero, 16 # constant 16
@@ -935,7 +972,7 @@ gameOver:
 	j main
 	
 writeGameOver:
-	lw $t0, displayAddress # $t0 stores the base address for display
+	lw $t0, displayBufferAddress # $t0 stores the base address for display
 	li $t2, 0x00ff00 # $t2 stores the green colour code
 	# write G
 	sw $t2, 520($t0) # paint the first (top-left) unit green.
