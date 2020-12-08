@@ -380,7 +380,8 @@ drawDoodler:
 #EXIT_OUTER_LOOP_DRAWING_DOODLER: 
 	lw $t0, displayBufferAddress # $s0 is x
 	lw $t2, doodlerLocation
-	add $t0, $t0, $t2 # top left pixel of doodler
+	add $t0, $t0, $t2 # bottom left pixel of doodler
+	subi $t0, $t0, 512 # top right pixel
 	
 	lw $t1, doodlerHeadColour
 	lw $t3, doodlerBodyColour
@@ -389,40 +390,109 @@ drawDoodler:
 	li $t6, 0xffffff # white
 	li $t7, 0x000000 # black
 
+	beq $t5, 3, DRAW_ROCKET
+
 	# draw head
-	sw $t1, -256($t0)
-	sw $t1, -248($t0)
-	sw $t1, -240($t0)
-	sw $t1, -384($t0)
-	sw $t1, -376($t0)
-	sw $t1, -504($t0)
-	sw $t1, -508($t0)
-	sw $t1, -500($t0)
-	sw $t1, -368($t0)
+	sw $t1, 4($t0)
+	sw $t1, 8($t0)
+	sw $t1, 12($t0)
+	sw $t1, 128($t0)
+	sw $t1, 136($t0)
+	sw $t1, 144($t0)
+	sw $t1, 256($t0)
+	sw $t1, 264($t0)
+	sw $t1, 272($t0)
 
 	# draw body
-	sw $t3, -124($t0)
-	sw $t3, -120($t0)
-	sw $t3, -116($t0)
+	sw $t3, 388($t0)
+	sw $t3, 392($t0)
+	sw $t3, 396($t0)
 
 	# draw shoes
-	sw $t4, 0($t0)
-	sw $t4, 4($t0)
-	sw $t4, 12($t0)
-	sw $t4, 16($t0)
+	sw $t4, 512($t0)
+	sw $t4, 516($t0)
+	sw $t4, 524($t0)
+	sw $t4, 528($t0)
 
 	# draw eyes
 DRAW_LOOKING_DOWN:	bne $t5, 0, DRAW_LOOKING_UP
-					sw $t7, -252($t0)
-					sw $t7, -244($t0)
-					sw $t6, -380($t0)
-					sw $t6, -372($t0)
+					sw $t7, 132($t0)
+					sw $t7, 140($t0)
+					sw $t6, 260($t0)
+					sw $t6, 268($t0)
 					j FINISHED_DRAWING_DOODLER
 
-DRAW_LOOKING_UP:			sw $t6, -252($t0)
-					sw $t6, -244($t0)
-					sw $t7, -380($t0)
-					sw $t7, -372($t0)
+DRAW_LOOKING_UP:	bne $t5, 1, DRAW_SPRING
+					sw $t6, 132($t0)
+					sw $t6, 140($t0)
+					sw $t7, 260($t0)
+					sw $t7, 268($t0)
+					j FINISHED_DRAWING_DOODLER
+
+DRAW_SPRING:		bne $t5, 2, DRAW_ROCKET
+					sw $t6, 132($t0)
+					sw $t6, 140($t0)
+					sw $t7, 260($t0)
+					sw $t7, 268($t0)
+					#drawing the actual spring
+					li $t6, 0xcecece # light gray
+					li $t7, 0x999999 # dark gray
+					sw $t6, 636($t0)
+					sw $t6, 640($t0)
+					sw $t6, 644($t0)
+					sw $t6, 648($t0)
+					sw $t6, 652($t0)
+					sw $t6, 656($t0)
+					sw $t6, 660($t0)
+					sw $t7, 768($t0)
+					sw $t7, 772($t0)
+					sw $t7, 776($t0)
+					sw $t7, 780($t0)
+					sw $t7, 784($t0)
+					sw $t6, 892($t0)
+					sw $t6, 896($t0)
+					sw $t6, 900($t0)
+					sw $t6, 904($t0)
+					sw $t6, 908($t0)
+					sw $t6, 912($t0)
+					sw $t6, 916($t0)
+					j FINISHED_DRAWING_DOODLER
+
+DRAW_ROCKET:		subi $t0, $t0, 128 # move cursor up by 1 row
+					subi $t0, $t0, 4 # move cursor left by 1 col
+					# drawing head
+					sw $t1, 12($t0)
+					sw $t1, 136($t0)
+					sw $t1, 140($t0)
+					sw $t1, 144($t0)
+					# drawing body
+					sw $t3, 268($t0)
+					sw $t3, 396($t0)
+					sw $t3, 520($t0)
+					sw $t3, 524($t0)
+					sw $t3, 528($t0)
+					# drawing shoes(arms)
+					sw $t4, 388($t0)
+					sw $t4, 404($t0)
+					sw $t4, 512($t0)
+					sw $t4, 516($t0)
+					sw $t4, 532($t0)
+					sw $t4, 536($t0)
+					# drawing eyes
+					sw $t6, 392($t0)
+					sw $t6, 400($t0)
+					sw $t7, 264($t0)
+					sw $t7, 272($t0)
+					# drawing fire
+					li $t6, 0xfc6602
+					li $t7, 0xfce302
+					sw $t6, 648($t0)
+					sw $t7, 652($t0)
+					sw $t6, 656($t0)
+					sw $t6, 772($t0)
+					sw $t6, 780($t0)
+					sw $t6, 788($t0)
+
 
 FINISHED_DRAWING_DOODLER:	jr $ra
 	
@@ -574,7 +644,7 @@ jump:
 	addi $sp, $sp, -4
 	sw $ra, ($sp)
 	
-	addi $t0, $zero, 1
+	addi $t0, $zero, 0
 	sw $t0, doodlerState # set doodler state to 1 (jumping)
 	
 	lw $t0, doodlerLocation
@@ -694,7 +764,7 @@ fall:
 	#	platformLocation - 132 - doodlerLocation <= 0 <= platformLocation - 122 - doodlerLocation
 	# checking platform 1
 	
-	addi $s0, $zero, 0
+	addi $s0, $zero, 1
 	sw $s0, doodlerState # set doodler state to 0 (falling)
 	
 	lw $s0, doodlerLocation
