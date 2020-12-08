@@ -14,15 +14,16 @@
 #
 # Which milestone is reached in this submission?
 # (See the assignment handout for descriptions of the milestones)
-# - Milestone 4 (choose the one the applies)
+# - Milestone 5
 #
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
 # 1. Press 'q' to pause
 # 2. Game Over screen and restart with 's'
 # 3. Score that updates on screen during gameplay
-# 4. Graphics (background gradient, platforms are clouds, Doodler is animated)
-# ... (add more if necessary)
+# 4. Graphics (background gradient, platforms are clouds, Doodler is more detailed and eyes move up and down)
+# 5. Realistic physics
+# 6. Powerups (Spring and Rocket)
 #
 # Any additional information that the TA needs to know:
 # - (write here, if any)
@@ -55,10 +56,14 @@
 	
 	jumpLoopCounter: .word 0
 	jumpLoopStopVal: .word 0
+	jumpSpeed: .word 1
+	sleepyTime: .word 100
 	
 	score: .word 0:8
 	
 	spaceChar: .asciiz " "
+	
+	extraSpaceForBufferErrors: .word 0:4096
 	
 	displayBuffer: .word 0:4096	
 	
@@ -66,6 +71,7 @@
 
 main:
 	jal resetDoodlerPosition
+	jal resetJumpSpeed
 	jal setDisplayBufferAddress
 	jal setup
 	jal waitForStart
@@ -123,7 +129,7 @@ sleep:
 	jal loadBufferToScreen
 	
 	li $v0, 32
-	li $a0, 100
+	lw $a0, sleepyTime
 	syscall
 	
 	lw $ra, ($sp)
@@ -558,6 +564,11 @@ resetDoodlerPosition:
 	addi $t0, $zero, 3896
 	sw $t0, doodlerLocation
 	jr $ra
+	
+resetJumpSpeed:
+	addi $t0, $zero, 1
+	sw $t0, jumpSpeed
+	jr $ra
 
 jump:
 	addi $sp, $sp, -4
@@ -569,27 +580,48 @@ jump:
 	lw $t0, doodlerLocation
 	
 	add $t8, $zero, $zero # set init value to 0
-	addi $t9, $zero, 13 # set loop stop val to 7 (loop repeats 13 times)
+	addi $t9, $zero, 13 # set loop stop val to 13 (loop repeats 13 times)
 START_LOOP_JUMP_UP:	beq $t8, $t9, EXIT_LOOP_JUMP_UP # branch if counter is 13
+
+			sw $t8, jumpLoopCounter
+			sw $t9, jumpLoopStopVal
+			
 			# 1. Update Doodler's position by 1 up
 			jal recolourPixelsOverDoodler
 			jal keyPressHandler
 			
+			# adjust jump speed for realistic physics
 			lw $t0, doodlerLocation
+			#lw $t8, jumpSpeed
+			#addi $t9, $zero, 128
+			#mult $t8, $t9
+			#mflo $t8
+			
 			subi $t0, $t0, 128
 			sw $t0, doodlerLocation
 			
+			#lw $t8, jumpSpeed
+			#addi $t8, $t8, 1
+			#sw $t8, jumpSpeed
+			
 			jal handleScroll
 			
-			sw $t8, jumpLoopCounter
-			sw $t9, jumpLoopStopVal
+			
 			jal drawPlatforms
-			lw $t8, jumpLoopCounter
-			lw $t9, jumpLoopStopVal
 	
 			# 2. Redraw Doodler
 			jal drawDoodler
 			jal sleep
+			
+			#lw $t8, jumpSpeed
+			#addi $t9, $zero, 2
+			#mult $t8, $t9
+			#mflo $t8
+			#addi $t8, $t8, 5
+			#sw $t8, jumpSpeed
+			
+			lw $t8, jumpLoopCounter
+			lw $t9, jumpLoopStopVal
 			
 UPDATE_LOOP_JUMP_UP: 	addi $t8, $t8, 1 # increment counter by 1
 			j START_LOOP_JUMP_UP
@@ -688,12 +720,13 @@ UPDATE_LOOP_CHECKING_PLATFORMS:	addi $t0, $t0, 1
 END_LOOP_CHECKING_PLATFORMS:
 		       	
 CHECKING_BOTTOM_OF_SCREEN:
-			addi $t1, $zero, 4096 # last possible pixel
+			addi $t1, $zero, 4092 # last possible pixel
 			ble $s0, $t1, NO_COLLISION	
 		       	j gameOver # handle colliding with bottom of screen
 			
 	# 4.1. If Doodler's position is on top of platform, restart jump from current position
 HANDLE_COLLISION:	jal updateScore
+			jal resetJumpSpeed
 			j jump
 
 NO_COLLISION: 
@@ -709,11 +742,26 @@ START_LOOP_JUMP_DOWN:	#beq $t8, $t9, EXIT_LOOP_JUMP_DOWN # branch if counter is 
 			jal recolourPixelsOverDoodler
 			jal keyPressHandler
 			
+			# adjust fall speed for realistic physics
 			lw $t0, doodlerLocation
+			#lw $t8, jumpSpeed
+			#subi $t8, $t8, 1
+			#sw $t8, jumpSpeed
+			#addi $t9, $zero, 128
+			#mult $t8, $t9
+			#mflo $t8
+			
 			addi $t0, $t0, 128
 			sw $t0, doodlerLocation
 			
 			jal drawPlatforms
+			
+			#lw $t8, jumpSpeed
+			#addi $t9, $zero, 2
+			#div $t8, $t9
+			#mflo $t8
+			#subi $t8, $t8, 5
+			#sw $t8, jumpSpeed
 	
 			# 2. Redraw Doodler
 			jal drawDoodler
