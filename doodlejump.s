@@ -14,7 +14,7 @@
 #
 # Which milestone is reached in this submission?
 # (See the assignment handout for descriptions of the milestones)
-# - Milestone 5
+# - Milestone 4 and 2/3
 #
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
@@ -22,8 +22,8 @@
 # 2. Game Over screen and restart with 's'
 # 3. Score that updates on screen during gameplay
 # 4. Graphics (background gradient, platforms are clouds, Doodler is more detailed and eyes move up and down)
-# 5. Realistic physics
-# 6. Powerups (Spring and Rocket)
+# 5. Powerups (Spring and Rocket)
+# 6. 
 #
 # Any additional information that the TA needs to know:
 # - (write here, if any)
@@ -54,10 +54,14 @@
 	doodlerColour: .word 0xafe99e
 	backgroundColour: .word 0x0713fc
 	
+	rocketPowerupLocation: .word -1 # -1 if not on screen
+	springPowerupLocation: .word -1 # -1 if not on screen
+	
 	jumpLoopCounter: .word 0
 	jumpLoopStopVal: .word 0
 	jumpSpeed: .word 1
 	sleepyTime: .word 100
+	scrollCounter: .word 0
 	
 	score: .word 0:8
 	
@@ -130,6 +134,7 @@ sleep:
 	
 	li $v0, 32
 	lw $a0, sleepyTime
+	#lw $a0, jumpSpeed
 	syscall
 	
 	lw $ra, ($sp)
@@ -495,6 +500,31 @@ DRAW_ROCKET:		subi $t0, $t0, 128 # move cursor up by 1 row
 
 
 FINISHED_DRAWING_DOODLER:	jr $ra
+
+drawPowerups:	
+	lw $t0, scrollCounter
+	la $t1, platformsArray
+	li $t2, 0xffffff # white for testing
+	lw $t3, displayBufferAddress
+	lw $t1, 8($t1) # targets address of 3rd platform and loads value
+CHECK_FOR_ROCKET_POWERUP:	bne $t0, 4, CHECK_FOR_SPRING_POWERUP
+				# set the rocket's location to be on top of 3rd platform
+				subi $t1, $t1, 128
+				sw $t1, rocketPowerupLocation
+				# draw the rocket
+				add $t1, $t1, $t3 # target address in buffer of left bottom pixel of rocket
+				sw $t2, ($t1) # make that pixel white
+				j FINISHED_DRAWING_POWERUPS
+				
+CHECK_FOR_SPRING_POWERUP:	bne $t0, 2, FINISHED_DRAWING_POWERUPS
+				# set the spring's location to be on top of 3rd platform
+				subi $t1, $t1, 128
+				sw $t1, springPowerupLocation
+				# draw the spring
+				add $t1, $t1, $t3 # target address in buffer of left bottom pixel of spring
+				sw $t2, ($t1) # make that pixel white
+
+FINISHED_DRAWING_POWERUPS:	jr $ra
 	
 waitForStart:	# NEED TO MERGE WITH pause
 	addi $sp, $sp, -4
@@ -538,6 +568,8 @@ recolourPixelsOverDoodler:
 	lw $t1, backgroundColour
 	lw $t2, doodlerLocation
 	
+	subi $t2, $t2, 4 # recolour a 7x7 square instead of a 5x5 one
+	
 	addi $t1, $t1, 10
 	addi $t4, $zero, 128
 	addi $t5, $zero, 8
@@ -550,9 +582,11 @@ recolourPixelsOverDoodler:
 	add $t3, $t0, $t2 # create $t3 starting at left-bottommost pixel of doodler, will be used as cursor
 	
 	add $t4, $zero, $zero # set outer init value to 0
-	addi $t5, $zero, 5 # set outer loop stop val to 5 (outer loop repeats 5 times)
+	#addi $t5, $zero, 5 # set outer loop stop val to 5 (outer loop repeats 5 times)
+	addi $t5, $zero, 7
 	add $t6, $zero, $zero # set inner init value to 0
-	addi $t7, $zero, 5 # set inner loop stop val to 5 (inner loop repeats 5 times)
+	#addi $t7, $zero, 5 # set inner loop stop val to 5 (inner loop repeats 5 times)
+	addi $t7, $zero, 7
 START_OUTER_LOOP_DRAWING_OVER_DOODLER:	beq $t4, $t5, EXIT_OUTER_LOOP_DRAWING_OVER_DOODLER # branch if counter is 5
 
 START_INNER_LOOP_DRAWING_OVER_DOODLER:	beq $t6, $t7, EXIT_INNER_LOOP_DRAWING_OVER_DOODLER # branch if counter is 5
@@ -560,7 +594,8 @@ START_INNER_LOOP_DRAWING_OVER_DOODLER:	beq $t6, $t7, EXIT_INNER_LOOP_DRAWING_OVE
 					addi $t3, $t3, 4 # increment the cursor by 4 to target the next address in display
 UPDATE_INNER_LOOP_DRAWING_OVER_DOODLER: 	addi $t6, $t6, 1 # increment counter by 1
 			 		j START_INNER_LOOP_DRAWING_OVER_DOODLER
-EXIT_INNER_LOOP_DRAWING_OVER_DOODLER: 	subi $t3, $t3, 20 # set cursor to first
+EXIT_INNER_LOOP_DRAWING_OVER_DOODLER: 	#subi $t3, $t3, 20 # set cursor to first
+					subi $t3, $t3, 28
 					subi $t3, $t3, 128 # pixel of next row
 					add $t6, $zero, $zero # reset inner init value to 0
 					
@@ -683,6 +718,7 @@ START_LOOP_JUMP_UP:	beq $t8, $t9, EXIT_LOOP_JUMP_UP # branch if counter is 13
 			jal drawDoodler
 			jal sleep
 			
+			# adjustment for changing physics with the sleep function
 			#lw $t8, jumpSpeed
 			#addi $t9, $zero, 2
 			#mult $t8, $t9
@@ -709,6 +745,10 @@ handleScroll:
 	addi $t1, $zero, 256 # the starting pixel of the yellow stripe
 	
 	bgt $t0, $t1, DONT_SCROLL # if the doodler is in the lower half of the screen, don't scroll
+		# increment scrollCounter by 1
+		lw $t2, scrollCounter
+		addi $t2, $t2, 1
+		sw $t2, scrollCounter
 		# then add some constant times 128 to all objects
 		jal scrollObjects
 		# generate a new platform to replace the one at index nextPlatformToDraw and increment that index by 1
@@ -716,6 +756,8 @@ handleScroll:
 		# redraw all the platforms (jump function takes care of doodler)
 		jal drawBackground
 		jal drawPlatforms
+		# generate powerups
+		jal drawPowerups
 DONT_SCROLL:
 	lw $ra, ($sp)
 	addi $sp, $sp, 4
@@ -773,6 +815,7 @@ fall:
 	addi $t4, $zero, 4
 	#checking platforms
 START_LOOP_CHECKING_PLATFORMS:	bge $t0, $t4, END_LOOP_CHECKING_PLATFORMS
+
 				sll $t5, $t0, 2
 				add $t6, $t8, $t5
 				lw $t1, ($t6)
@@ -784,6 +827,7 @@ START_LOOP_CHECKING_PLATFORMS:	bge $t0, $t4, END_LOOP_CHECKING_PLATFORMS
 			
 				ble $s0, $t2, UPDATE_LOOP_CHECKING_PLATFORMS
 		       		bgt $s0, $t3, UPDATE_LOOP_CHECKING_PLATFORMS #continue
+		       		add $a0, $t1, $zero # store the platform location value that was collided with
 		       		j HANDLE_COLLISION # handle colliding with platform 3
 UPDATE_LOOP_CHECKING_PLATFORMS:	addi $t0, $t0, 1
 				j START_LOOP_CHECKING_PLATFORMS
@@ -795,7 +839,8 @@ CHECKING_BOTTOM_OF_SCREEN:
 		       	j gameOver # handle colliding with bottom of screen
 			
 	# 4.1. If Doodler's position is on top of platform, restart jump from current position
-HANDLE_COLLISION:	jal updateScore
+HANDLE_COLLISION:	jal checkCollisionWithPowerups
+			jal updateScore
 			jal resetJumpSpeed
 			j jump
 
@@ -826,6 +871,7 @@ START_LOOP_JUMP_DOWN:	#beq $t8, $t9, EXIT_LOOP_JUMP_DOWN # branch if counter is 
 			
 			jal drawPlatforms
 			
+			# adjustment for changing physics with the sleep function
 			#lw $t8, jumpSpeed
 			#addi $t9, $zero, 2
 			#div $t8, $t9
@@ -844,6 +890,21 @@ EXIT_LOOP_JUMP_DOWN: 	j fall
 	lw $ra, ($sp)
 	addi $sp, $sp, 4
 	jr $ra
+	
+checkCollisionWithPowerups:	# $a0 is the location of the platform the doodler jumped on
+	lw $t0, doodlerLocation
+	lw $t1, rocketPowerupLocation
+	subi $t2, $a0, 128 # location of where the powerup should be
+CHECK_ROCKET_LOCATION:		bne $t1, $t2, CHECK_SPRING_LOCATION
+				addi $t0, $zero, 3
+				sw $t0, doodlerState
+				j DONE_CHECKING_LOCATION
+				
+CHECK_SPRING_LOCATION:		lw $t1, springPowerupLocation
+				bne $t1, $t2, DONE_CHECKING_LOCATION
+				addi $t0, $zero, 2
+				sw $t0, doodlerState
+DONE_CHECKING_LOCATION:		jr $ra
 	
 updateScore:
 	addi $sp, $sp, -4
