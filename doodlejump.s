@@ -522,7 +522,8 @@ CHECK_FOR_SPRING_POWERUP:	bne $t0, 2, FINISHED_DRAWING_POWERUPS
 				sw $t1, springPowerupLocation
 				# draw the spring
 				add $t1, $t1, $t3 # target address in buffer of left bottom pixel of spring
-				sw $t2, ($t1) # make that pixel white
+				li $t2, 0xff0000
+				sw $t2, ($t1) # make that pixel red
 
 FINISHED_DRAWING_POWERUPS:	jr $ra
 	
@@ -569,6 +570,7 @@ recolourPixelsOverDoodler:
 	lw $t2, doodlerLocation
 	
 	subi $t2, $t2, 4 # recolour a 7x7 square instead of a 5x5 one
+	addi $t2, $t2, 384
 	
 	addi $t1, $t1, 10
 	addi $t4, $zero, 128
@@ -583,7 +585,7 @@ recolourPixelsOverDoodler:
 	
 	add $t4, $zero, $zero # set outer init value to 0
 	#addi $t5, $zero, 5 # set outer loop stop val to 5 (outer loop repeats 5 times)
-	addi $t5, $zero, 7
+	addi $t5, $zero, 8
 	add $t6, $zero, $zero # set inner init value to 0
 	#addi $t7, $zero, 5 # set inner loop stop val to 5 (inner loop repeats 5 times)
 	addi $t7, $zero, 7
@@ -736,6 +738,134 @@ EXIT_LOOP_JUMP_UP: 	j fall
 			lw $ra, ($sp)
 			addi $sp, $sp, 4
 			jr $ra
+
+springJump:
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	
+	addi $t0, $zero, 2
+	sw $t0, doodlerState # set doodler state to 2 (spring)
+	
+	lw $t0, doodlerLocation
+	
+	add $t8, $zero, $zero # set init value to 0
+	addi $t9, $zero, 26 # set loop stop val to 26 (loop repeats 26 times)
+START_LOOP_SPRING_JUMP_UP:	beq $t8, $t9, EXIT_LOOP_SPRING_JUMP_UP # branch if counter is 13
+
+			sw $t8, jumpLoopCounter
+			sw $t9, jumpLoopStopVal
+			
+			# 1. Update Doodler's position by 1 up
+			jal recolourPixelsOverDoodler
+			jal keyPressHandler
+			
+			# adjust jump speed for realistic physics
+			lw $t0, doodlerLocation
+			#lw $t8, jumpSpeed
+			#addi $t9, $zero, 128
+			#mult $t8, $t9
+			#mflo $t8
+			
+			subi $t0, $t0, 128
+			sw $t0, doodlerLocation
+			
+			#lw $t8, jumpSpeed
+			#addi $t8, $t8, 1
+			#sw $t8, jumpSpeed
+			
+			jal handleScroll
+			
+			
+			jal drawPlatforms
+	
+			# 2. Redraw Doodler
+			jal drawDoodler
+			jal sleep
+			
+			# adjustment for changing physics with the sleep function
+			#lw $t8, jumpSpeed
+			#addi $t9, $zero, 2
+			#mult $t8, $t9
+			#mflo $t8
+			#addi $t8, $t8, 5
+			#sw $t8, jumpSpeed
+			
+			lw $t8, jumpLoopCounter
+			lw $t9, jumpLoopStopVal
+			
+UPDATE_LOOP_SPRING_JUMP_UP: 	addi $t8, $t8, 1 # increment counter by 1
+				j START_LOOP_SPRING_JUMP_UP
+EXIT_LOOP_SPRING_JUMP_UP: 	addi $t0, $zero, 0
+				sw $t0, doodlerState # set doodler state to 0 (falling)
+				j fall
+
+			lw $ra, ($sp)
+			addi $sp, $sp, 4
+			jr $ra
+	
+rocketJump:
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	
+	addi $t0, $zero, 3
+	sw $t0, doodlerState # set doodler state to 3 (rocket)
+	
+	lw $t0, doodlerLocation
+	
+	add $t8, $zero, $zero # set init value to 0
+	addi $t9, $zero, 100 # set loop stop val to 100 (loop repeats 26 times)
+START_LOOP_ROCKET_JUMP_UP:	beq $t8, $t9, EXIT_LOOP_ROCKET_JUMP_UP # branch if counter is 13
+
+			sw $t8, jumpLoopCounter
+			sw $t9, jumpLoopStopVal
+			
+			# 1. Update Doodler's position by 1 up
+			jal recolourPixelsOverDoodler
+			jal keyPressHandler
+			
+			# adjust jump speed for realistic physics
+			lw $t0, doodlerLocation
+			#lw $t8, jumpSpeed
+			#addi $t9, $zero, 128
+			#mult $t8, $t9
+			#mflo $t8
+			
+			subi $t0, $t0, 128
+			sw $t0, doodlerLocation
+			
+			#lw $t8, jumpSpeed
+			#addi $t8, $t8, 1
+			#sw $t8, jumpSpeed
+			
+			jal handleScroll
+			
+			
+			jal drawPlatforms
+	
+			# 2. Redraw Doodler
+			jal drawDoodler
+			jal sleep
+			
+			# adjustment for changing physics with the sleep function
+			#lw $t8, jumpSpeed
+			#addi $t9, $zero, 2
+			#mult $t8, $t9
+			#mflo $t8
+			#addi $t8, $t8, 5
+			#sw $t8, jumpSpeed
+			
+			lw $t8, jumpLoopCounter
+			lw $t9, jumpLoopStopVal
+			
+UPDATE_LOOP_ROCKET_JUMP_UP: 	addi $t8, $t8, 1 # increment counter by 1
+				j START_LOOP_ROCKET_JUMP_UP
+EXIT_LOOP_ROCKET_JUMP_UP: 	addi $t0, $zero, 0
+				sw $t0, doodlerState # set doodler state to 0 (falling)
+				j fall
+	
+	lw $ra, ($sp)
+	addi $sp, $sp, 4
+	jr $ra
 			
 handleScroll:
 	addi $sp, $sp, -4
@@ -842,7 +972,20 @@ CHECKING_BOTTOM_OF_SCREEN:
 HANDLE_COLLISION:	jal checkCollisionWithPowerups
 			jal updateScore
 			jal resetJumpSpeed
-			j jump
+			
+			# if the doodler state is now 2, initiate spring
+			lw $t0, doodlerState
+			bne $t0, 2, CHECK_FOR_ROCKET_INITIATION
+			addi $t0, $zero, -1
+			sw $t0, springPowerupLocation
+			j springJump
+			
+CHECK_FOR_ROCKET_INITIATION:	bne $t0, 3, NO_POWERUP # if the doodler state is now 3, initiate rocket
+				addi $t0, $zero, -1
+				sw $t0, rocketPowerupLocation
+				j rocketJump
+				
+NO_POWERUP:			j jump
 
 NO_COLLISION: 
 	# 4.2. Otherwise, check keyboard input
