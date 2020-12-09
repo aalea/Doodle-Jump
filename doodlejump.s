@@ -513,7 +513,45 @@ CHECK_FOR_ROCKET_POWERUP:	bne $t0, 4, CHECK_FOR_SPRING_POWERUP
 				sw $t1, rocketPowerupLocation
 				# draw the rocket
 				add $t1, $t1, $t3 # target address in buffer of left bottom pixel of rocket
-				sw $t2, ($t1) # make that pixel white
+				#sw $t2, ($t1) # make that pixel white	
+					subi $t1, $t1, 512 # top left pixel
+					subi $t1, $t1, 128 # move cursor up by 1 row
+
+					li $t7, 0xff0000 # red for head and arms
+					li $t3, 0xffffff # white for body
+
+					# drawing head
+					sw $t7, 12($t1)
+					sw $t7, 136($t1)
+					sw $t7, 140($t1)
+					sw $t7, 144($t1)
+					# drawing body
+					sw $t3, 268($t1)
+					sw $t3, 396($t1)
+					sw $t3, 520($t1)
+					sw $t3, 524($t1)
+					sw $t3, 528($t1)
+					# drawing shoes(arms)
+					sw $t7, 388($t1)
+					sw $t7, 404($t1)
+					sw $t7, 512($t1)
+					sw $t7, 516($t1)
+					sw $t7, 532($t1)
+					sw $t7, 536($t1)
+					# drawing eyes (more body)
+					sw $t3, 392($t1)
+					sw $t3, 400($t1)
+					sw $t3, 264($t1)
+					sw $t3, 272($t1)
+					# drawing fire
+					li $t6, 0xfc6602
+					li $t7, 0xfce302
+					sw $t6, 648($t1)
+					sw $t7, 652($t1)
+					sw $t6, 656($t1)
+					sw $t6, 772($t1)
+					sw $t6, 780($t1)
+					sw $t6, 788($t1)
 				j FINISHED_DRAWING_POWERUPS
 				
 CHECK_FOR_SPRING_POWERUP:	bne $t0, 2, FINISHED_DRAWING_POWERUPS
@@ -522,8 +560,32 @@ CHECK_FOR_SPRING_POWERUP:	bne $t0, 2, FINISHED_DRAWING_POWERUPS
 				sw $t1, springPowerupLocation
 				# draw the spring
 				add $t1, $t1, $t3 # target address in buffer of left bottom pixel of spring
-				li $t2, 0xff0000
-				sw $t2, ($t1) # make that pixel red
+				#li $t2, 0xff0000
+				#sw $t2, ($t1) # make that pixel red
+				li $t6, 0xcecece # light gray
+					li $t7, 0x999999 # dark gray
+					subi $t1, $t1, 512 # top left pixel
+					subi $t1, $t1, 508
+
+					sw $t6, 636($t1)
+					sw $t6, 640($t1)
+					sw $t6, 644($t1)
+					sw $t6, 648($t1)
+					sw $t6, 652($t1)
+					sw $t6, 656($t1)
+					sw $t6, 660($t1)
+					sw $t7, 768($t1)
+					sw $t7, 772($t1)
+					sw $t7, 776($t1)
+					sw $t7, 780($t1)
+					sw $t7, 784($t1)
+					sw $t6, 892($t1)
+					sw $t6, 896($t1)
+					sw $t6, 900($t1)
+					sw $t6, 904($t1)
+					sw $t6, 908($t1)
+					sw $t6, 912($t1)
+					sw $t6, 916($t1)
 
 FINISHED_DRAWING_POWERUPS:	jr $ra
 	
