@@ -60,7 +60,7 @@
 	jumpLoopCounter: .word 0
 	jumpLoopStopVal: .word 0
 	jumpSpeed: .word 1
-	sleepyTime: .word 100
+	sleepyTime: .word 50
 	scrollCounter: .word 0
 	
 	score: .word 0:8
@@ -305,7 +305,9 @@ UPDATE_LOOP_COLOUR_GRADIENT:	addi $s1, $s1, 8
 				addi $t0, $t0, 1
 				addi $s0, $s0, 128
 				j START_LOOP_COLOUR_GRADIENT
-EXIT_LOOP_COLOUR_GRADIENT:	jr $ra # now the background has been drawn
+EXIT_LOOP_COLOUR_GRADIENT:	# draw moon
+
+				jr $ra # now the background has been drawn
 	
 	
 drawPlatforms:
@@ -1266,25 +1268,51 @@ EXIT_LOOP_PRINTING_SCORE:
 	
 	
 checkScoreDigit: # retrieve current digit number on stack
-	lw $t1, ($sp) 
+	lw $t9, ($sp) 
 	addi $sp, $sp, 4
+	# put $ra on stack
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
 	# get address of current digit
-	sll $t1, $t1, 2 # multiply current digit by 4
+	sll $t1, $t9, 2 # multiply current digit by 4
 	la $t0, score
 	add $t0, $t0, $t1 # correctly target the address of the current digit
 	# load current digit
 	lw $t1, ($t0)
 	
 	bge $t1, 9, RESET_CURRENT_DIGIT # branch if current digit == 9
-	addi $t1, $t1, 1 # then increment current digit by 1 
-	sw $t1, ($t0) # store score digit in memory
+	# if score digit is 6, sum doodlerLocation and 256, put that in $a0, and call drawCool
+CHECK_FOR_COOL_NOTIF:	bne $t9, 6, CHECK_FOR_WOW_NOTIF
+			lw $t9, doodlerLocation
+			addi $a0, $t9, 228
+			jal drawPog
+			j FINISHED_CHECKING_FOR_NOTIFS
+	# if score digit is 5, sum doodlerLocation and 256, put that in $a0, and call drawWow
+CHECK_FOR_WOW_NOTIF:	bne $t9, 5, CHECK_FOR_POG_NOTIF
+			lw $t9, doodlerLocation
+			addi $a0, $t9, 232
+			jal drawWow
+			j FINISHED_CHECKING_FOR_NOTIFS
+	# if score digit is 4, sum doodlerLocation and 256, put that in $a0, and call drawPog
+CHECK_FOR_POG_NOTIF:	bne $t9, 4, FINISHED_CHECKING_FOR_NOTIFS
+			lw $t9, doodlerLocation
+			addi $a0, $t9, 244
+			jal drawPog
 	
-	addi $a0, $zero, 0
-	jr $ra # and return 0 by setting $a0
+	
+FINISHED_CHECKING_FOR_NOTIFS:	addi $t1, $t1, 1 # then increment current digit by 1 
+				sw $t1, ($t0) # store score digit in memory
+	
+				addi $a0, $zero, 0
+				lw $ra, ($sp)
+				addi $sp, $sp, 4
+				jr $ra # and return 0 by setting $a0
 	
 RESET_CURRENT_DIGIT:	# else if current digit == 9, 
 			sw $zero, ($t0) # then set current digit to 0 
 			addi $a0, $zero, 1 
+			lw $ra, ($sp)
+			addi $sp, $sp, 4
 			jr $ra # and return 1
 			
 clearScore:
@@ -1331,6 +1359,156 @@ UPDATE_LOOP_CLEARING_SCREEN:	addi $t2, $t2, 1
 				j START_LOOP_CLEARING_SCREEN
 
 EXIT_LOOP_CLEARING_SCREEN:	jr $ra
+
+drawCool:	# offset of upper left pixel of text is in $a0
+	lw $s0, displayAddress 
+	add $t2, $s0, $a0
+	li $t3, 0xff0000
+	
+	# drawing cool!
+	sw $t3, ($t2)
+	sw $t3, 4($t2)
+	sw $t3, 8($t2)
+	sw $t3, 12($t2)
+	sw $t3, 20($t2)
+	sw $t3, 24($t2)
+	sw $t3, 28($t2)
+	sw $t3, 32($t2)
+	sw $t3, 40($t2)
+	sw $t3, 44($t2)
+	sw $t3, 48($t2)
+	sw $t3, 52($t2)
+	sw $t3, 60($t2)
+	sw $t3, 76($t2)
+	# next row
+	sw $t3, 128($t2)
+	sw $t3, 148($t2)
+	sw $t3, 160($t2)
+	sw $t3, 168($t2)
+	sw $t3, 180($t2)
+	sw $t3, 188($t2)
+	sw $t3, 204($t2)
+	# next row
+	sw $t3, 256($t2)
+	sw $t3, 276($t2)
+	sw $t3, 288($t2)
+	sw $t3, 296($t2)
+	sw $t3, 308($t2)
+	sw $t3, 316($t2)
+	# next row
+	sw $t3, 384($t2)
+	sw $t3, 388($t2)
+	sw $t3, 392($t2)
+	sw $t3, 396($t2)
+	sw $t3, 404($t2)
+	sw $t3, 408($t2)
+	sw $t3, 412($t2)
+	sw $t3, 416($t2)
+	sw $t3, 424($t2)
+	sw $t3, 428($t2)
+	sw $t3, 432($t2)
+	sw $t3, 436($t2)
+	sw $t3, 444($t2)
+	sw $t3, 448($t2)
+	sw $t3, 452($t2)
+	sw $t3, 460($t2)
+	jr $ra
+	
+drawWow:	# offset of upper left pixel of text is in $a0
+	lw $s0, displayAddress 
+	add $t2, $s0, $a0
+	li $t3, 0xff0000
+	sw $t3, ($t2)
+	sw $t3, 8($t2)
+	sw $t3, 16($t2)
+	sw $t3, 24($t2)
+	sw $t3, 28($t2)
+	sw $t3, 32($t2)
+	sw $t3, 36($t2)
+	sw $t3, 44($t2)
+	sw $t3, 52($t2)
+	sw $t3, 60($t2)
+	sw $t3, 68($t2)
+	# next row
+	sw $t3, 128($t2)
+	sw $t3, 136($t2)
+	sw $t3, 144($t2)
+	sw $t3, 152($t2)
+	sw $t3, 164($t2)
+	sw $t3, 172($t2)
+	sw $t3, 180($t2)
+	sw $t3, 188($t2)
+	sw $t3, 196($t2)
+	# next row
+	sw $t3, 256($t2)
+	sw $t3, 264($t2)
+	sw $t3, 272($t2)
+	sw $t3, 280($t2)
+	sw $t3, 292($t2)
+	sw $t3, 300($t2)
+	sw $t3, 308($t2)
+	sw $t3, 316($t2)
+	# next row
+	sw $t3, 384($t2)
+	sw $t3, 388($t2)
+	sw $t3, 392($t2)
+	sw $t3, 396($t2)
+	sw $t3, 400($t2)
+	sw $t3, 408($t2)
+	sw $t3, 412($t2)
+	sw $t3, 416($t2)
+	sw $t3, 420($t2)
+	sw $t3, 428($t2)
+	sw $t3, 432($t2)
+	sw $t3, 436($t2)
+	sw $t3, 440($t2)
+	sw $t3, 444($t2)
+	sw $t3, 452($t2)
+	jr $ra
+	
+drawPog:	# offset of upper left pixel of text is in $a0
+	lw $s0, displayAddress 
+	add $t2, $s0, $a0
+	li $t3, 0xff0000
+	sw $t3, 48($t2)
+	# next row
+	sw $t3, 128($t2)
+	sw $t3, 132($t2)
+	sw $t3, 136($t2)
+	sw $t3, 144($t2)
+	sw $t3, 148($t2)
+	sw $t3, 152($t2)
+	sw $t3, 160($t2)
+	sw $t3, 164($t2)
+	sw $t3, 168($t2)
+	sw $t3, 176($t2)
+	# next row
+	sw $t3, 256($t2)
+	sw $t3, 264($t2)
+	sw $t3, 272($t2)
+	sw $t3, 280($t2)
+	sw $t3, 288($t2)
+	sw $t3, 296($t2)
+	# next row
+	sw $t3, 384($t2)
+	sw $t3, 388($t2)
+	sw $t3, 392($t2)
+	sw $t3, 400($t2)
+	sw $t3, 404($t2)
+	sw $t3, 408($t2)
+	sw $t3, 416($t2)
+	sw $t3, 420($t2)
+	sw $t3, 424($t2)
+	sw $t3, 432($t2)
+	# next row
+	sw $t3, 512($t2)
+	sw $t3, 552($t2)
+	# next row
+	sw $t3, 640($t2)
+	sw $t3, 672($t2)
+	sw $t3, 676($t2)
+	sw $t3, 680($t2)
+	jr $ra
 	
 	
 gameOver:	
