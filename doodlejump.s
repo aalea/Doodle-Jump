@@ -14,19 +14,19 @@
 #
 # Which milestone is reached in this submission?
 # (See the assignment handout for descriptions of the milestones)
-# - Milestone 4 and 2/3
+# - Milestone 5
 #
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
 # 1. Press 'q' to pause
 # 2. Game Over screen and restart with 's'
 # 3. Score that updates on screen during gameplay
-# 4. Graphics (background gradient, platforms are clouds, Doodler is more detailed and eyes move up and down)
+# 4. Graphics (background gradient with moon, platforms are clouds, Doodler is more detailed and eyes move up and down)
 # 5. Powerups (Spring and Rocket)
-# 6. 
+# 6. On-screen notifications ("Cool!" appears after every 10 points, "Wow!" appears after every 100 points, "Pog!" appears after every 1000 points)
 #
 # Any additional information that the TA needs to know:
-# - (write here, if any)
+# - The score also appears on the console everytime it updates
 ######################################################################
 
 .data
@@ -60,7 +60,7 @@
 	jumpLoopCounter: .word 0
 	jumpLoopStopVal: .word 0
 	jumpSpeed: .word 1
-	sleepyTime: .word 50
+	sleepyTime: .word 75
 	scrollCounter: .word 0
 	
 	score: .word 0:8
@@ -805,6 +805,7 @@ START_LOOP_JUMP_UP:	beq $t8, $t9, EXIT_LOOP_JUMP_UP # branch if counter is 13
 			
 			
 			jal drawPlatforms
+			jal drawPowerups
 	
 			# 2. Redraw Doodler
 			jal drawDoodler
@@ -867,6 +868,7 @@ START_LOOP_SPRING_JUMP_UP:	beq $t8, $t9, EXIT_LOOP_SPRING_JUMP_UP # branch if co
 			
 			
 			jal drawPlatforms
+			jal drawPowerups
 	
 			# 2. Redraw Doodler
 			jal drawDoodler
@@ -931,6 +933,7 @@ START_LOOP_ROCKET_JUMP_UP:	beq $t8, $t9, EXIT_LOOP_ROCKET_JUMP_UP # branch if co
 			
 			
 			jal drawPlatforms
+			jal drawPowerups
 	
 			# 2. Redraw Doodler
 			jal drawDoodler
@@ -1103,6 +1106,7 @@ START_LOOP_JUMP_DOWN:	#beq $t8, $t9, EXIT_LOOP_JUMP_DOWN # branch if counter is 
 			sw $t0, doodlerLocation
 			
 			jal drawPlatforms
+			jal drawPowerups
 			
 			# adjustment for changing physics with the sleep function
 			#lw $t8, jumpSpeed
