@@ -306,7 +306,33 @@ UPDATE_LOOP_COLOUR_GRADIENT:	addi $s1, $s1, 8
 				addi $s0, $s0, 128
 				j START_LOOP_COLOUR_GRADIENT
 EXIT_LOOP_COLOUR_GRADIENT:	# draw moon
-
+				li $s1, 0xf9f975
+				lw $s0, displayBufferAddress
+				sw $s1, 4($s0)
+				sw $s1, 8($s0)
+				sw $s1, 12($s0)
+				sw $s1, 16($s0)
+				sw $s1, 20($s0)
+				sw $s1, 128($s0)
+				sw $s1, 132($s0)
+				sw $s1, 136($s0)
+				sw $s1, 152($s0)
+				sw $s1, 256($s0)
+				sw $s1, 260($s0)
+				sw $s1, 384($s0)
+				sw $s1, 388($s0)
+				sw $s1, 512($s0)
+				sw $s1, 516($s0)
+				sw $s1, 640($s0)
+				sw $s1, 644($s0)
+				sw $s1, 648($s0)
+				sw $s1, 664($s0)
+				sw $s1, 772($s0)
+				sw $s1, 776($s0)
+				sw $s1, 780($s0)
+				sw $s1, 784($s0)
+				sw $s1, 788($s0)
+				
 				jr $ra # now the background has been drawn
 	
 	
@@ -1285,7 +1311,7 @@ checkScoreDigit: # retrieve current digit number on stack
 CHECK_FOR_COOL_NOTIF:	bne $t9, 6, CHECK_FOR_WOW_NOTIF
 			lw $t9, doodlerLocation
 			addi $a0, $t9, 228
-			jal drawPog
+			jal drawCool
 			j FINISHED_CHECKING_FOR_NOTIFS
 	# if score digit is 5, sum doodlerLocation and 256, put that in $a0, and call drawWow
 CHECK_FOR_WOW_NOTIF:	bne $t9, 5, CHECK_FOR_POG_NOTIF
@@ -1324,6 +1350,7 @@ clearScore:
 	
 	addi $t1, $t1, 10
 	
+	
 START_LOOP_CLEARING_SCREEN:	bge $t2, 8, EXIT_LOOP_CLEARING_SCREEN # branch if loop counter is greater than or equal to 8
 	
 	sw $t1, ($t0)
@@ -1358,7 +1385,34 @@ UPDATE_LOOP_CLEARING_SCREEN:	addi $t2, $t2, 1
 				subi $t1, $t1, 32
 				j START_LOOP_CLEARING_SCREEN
 
-EXIT_LOOP_CLEARING_SCREEN:	jr $ra
+EXIT_LOOP_CLEARING_SCREEN:	# draw moon
+				li $t1, 0xf9f975
+				lw $t0, displayBufferAddress
+				sw $t1, 4($t0)
+				sw $t1, 8($t0)
+				sw $t1, 12($t0)
+				sw $t1, 16($t0)
+				sw $t1, 20($t0)
+				sw $t1, 128($t0)
+				sw $t1, 132($t0)
+				sw $t1, 136($t0)
+				sw $t1, 152($t0)
+				sw $t1, 256($t0)
+				sw $t1, 260($t0)
+				sw $t1, 384($t0)
+				sw $t1, 388($t0)
+				sw $t1, 512($t0)
+				sw $t1, 516($t0)
+				sw $t1, 640($t0)
+				sw $t1, 644($t0)
+				sw $t1, 648($t0)
+				sw $t1, 664($t0)
+				sw $t1, 772($t0)
+				sw $t1, 776($t0)
+				sw $t1, 780($t0)
+				sw $t1, 784($t0)
+				sw $t1, 788($t0)
+				jr $ra
 
 drawCool:	# offset of upper left pixel of text is in $a0
 	lw $s0, displayAddress 
